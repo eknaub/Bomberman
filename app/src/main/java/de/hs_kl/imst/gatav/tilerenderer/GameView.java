@@ -44,7 +44,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
     synchronized private void increaseElapsedTime(double increment) { elapsedTime += increment; }
 
     private double maxCollectedTargets = 30;
-
+    //test
     private int gameMode=0; // 0 game not startet, 1 game started by first fling gesture, 2 game over
 
     private float gameWidth = -1;
