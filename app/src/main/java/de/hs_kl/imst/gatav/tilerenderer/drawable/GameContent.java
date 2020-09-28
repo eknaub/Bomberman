@@ -451,7 +451,17 @@ public class GameContent implements Drawable {
             case 'f':
             case 'F': return new Floor(xIndex, yIndex, null);
             case 'p':
-            case 'P': return new Player(xIndex, yIndex, getGraphicsStream(levelName, "bender"));
+            case 'P': return new Player(xIndex, yIndex, getGraphicsStream(levelName, "professor"));
+            case 'c':
+            case 'C': return new Chest(xIndex, yIndex, getGraphicsStream(levelName, "chest"));
+            case 'g':
+            case 'G': return new Five(xIndex, yIndex, getGraphicsStream(levelName, "grade"));
+            case 'e':
+            case 'E': return new Exam(xIndex, yIndex, getGraphicsStream(levelName, "exam"));
+            case 's':
+            case 'S': return new Student(xIndex, yIndex, getGraphicsStream(levelName, "student"));
+            case 'u':
+            case 'U': return new Upgrade(xIndex, yIndex, getGraphicsStream(levelName, "upgrade"));
         }
         return null;
     }
