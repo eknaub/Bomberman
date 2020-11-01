@@ -76,9 +76,11 @@ public class GameContent implements Drawable {
     /**
      * Dynamisches Ziel
      */
+    /*
     private DynamicTarget dynTarget = null;
 
     public DynamicTarget getDynTarget() { return dynTarget;}
+     */
 
     /**
      * Wird in {@link GameContent#movePlayer(Direction)} verwendet, um dem Game Thread
@@ -90,6 +92,10 @@ public class GameContent implements Drawable {
     synchronized public boolean isPlayerDirectionIDLE() { return playerDirection == Direction.IDLE; }
     synchronized public void setPlayerDirection(Direction newDirection) { playerDirection = newDirection;}
     synchronized public Direction getPlayerDirection() { return playerDirection; }
+
+    private volatile boolean plantBomb = false;
+    synchronized public void resetPlantBomb() { plantBomb = false; }
+    synchronized public void activatePlantBomb() { plantBomb = true; }
 
     /**
      * Zufallszahlengenerator zum Hinzufügen neuer Ziele
@@ -164,6 +170,7 @@ public class GameContent implements Drawable {
         // Hinterher steht der Spieler logisch bereits auf der neuen Position
         player.move(newX, newY);
 
+        /*
         // Vierter Schritt: Prüfen ob auf der Zielkachel ein Target existiert
         if(targetTiles[newY][newX] != null && targetTiles[newY][newX] instanceof Target) {
             collectedTargets++;
@@ -175,6 +182,8 @@ public class GameContent implements Drawable {
             // Neues Ziel erzeugen
             createNewTarget();
         }
+         */
+        /*
         // Prüfen ob auf der Zielposition das dynamische Target existert => Sonderpunkte :-)
         if(dynTarget!=null) {
             if(samePosition(player, dynTarget)) {
@@ -183,7 +192,19 @@ public class GameContent implements Drawable {
                 dynTarget = null;
             }
         }
+        */
 
+        return true;
+    }
+
+    public boolean plantBomb() {
+        int x = player.getX();
+        int y = player.getY();
+
+        Exam exam = new Exam(x, y, getGraphicsStream(levelName, "exam"));
+
+        targetTiles[exam.getY()][exam.getX()] = exam;
+        targets.add(exam);
         return true;
     }
 
@@ -206,9 +227,11 @@ public class GameContent implements Drawable {
                 if(targetTiles[yIndex][xIndex] == null) continue;
                 targetTiles[yIndex][xIndex].draw(canvas);
             }
+        /*
         // Dynamisches Ziel zeichnen
         if(dynTarget!=null)
             dynTarget.draw(canvas);
+         */
         // Spieler zeichnen
         player.draw(canvas);
     }
@@ -220,6 +243,14 @@ public class GameContent implements Drawable {
      */
     @Override
     public void update(float fracsec) {
+
+        if(plantBomb)
+        {
+            Log.d("HSKL", "PLANT BOMB");
+            //plant bomb on spot
+            plantBomb();
+            resetPlantBomb();
+        }
         // 1. Schritt: Auf mögliche Player Bewegung prüfen und ggf. durchführen/anstoßen
         // vorhandenen Player Move einmalig ausführen bzw. anstoßen, falls
         // PlayerDirection nicht IDLE ist und Player aktuell nicht in einer Animation
@@ -227,10 +258,12 @@ public class GameContent implements Drawable {
         if(!isPlayerDirectionIDLE() && !player.isMoving())
             movePlayer(getPlayerDirection());
         // Dynamisches Ziel vielleicht erzeugen
+        /*
         if(dynTarget==null) {
             if(random.nextDouble()<0.004)
                 createAndMoveDynamicTarget();
         }
+         */
 
         // 2. Schritt: Updates bei allen dynamischen Kacheln durchführen (auch Player)
         for(TileGraphics dynamicTile : dynamicTiles)
@@ -241,10 +274,12 @@ public class GameContent implements Drawable {
         if(!player.isMoving())
             resetPlayerDirection();
         // Animation des dynamischen Ziels abgeschlossen
+        /*
        if(dynTarget!= null && !dynTarget.isMoving()) {
             dynamicTiles.remove(dynTarget);
             dynTarget = null;
         }
+         */
    }
 
 
@@ -294,9 +329,6 @@ public class GameContent implements Drawable {
                 }
             }
         }
-
-        // Dritter Schritt: erste Ziele erzeugen und platzieren
-        createNewTarget(); createNewTarget(); createNewTarget();
     }
 
 
@@ -308,6 +340,7 @@ public class GameContent implements Drawable {
      * Nach erfolgreichem Anlegen wird der Move direkt initiiert.
      * @return dynamisches Ziel, kann null sein, falls es von einer gewählten Source nicht erzeugt werden konnte
      */
+    /*
     @Nullable
     public void createAndMoveDynamicTarget() {
         // Source zufällig aber gültig auswählen
@@ -360,12 +393,15 @@ public class GameContent implements Drawable {
         dynamicTiles.add(dynTarget);
     }
 
+     */
+
 
     /**
      * Erzeugt ein neues Ziel und sorgt dafür, dass dieses sich nicht auf der Position des Spielers
      * oder eines vorhandenen Ziels befindet
      * @return neues Ziel
      */
+    /*
     private void createNewTarget() {
         TileGraphics targetTile = possibleTargets.get(random.nextInt(possibleTargets.size()));
         // Sicherstellen, dass das Ziel nicht an der gleichen Position wie der Spieler erzeugt wird
@@ -379,7 +415,7 @@ public class GameContent implements Drawable {
         targetTiles[newTarget.getY()][newTarget.getX()] = newTarget;
         targets.add(newTarget);
     }
-
+*/
 
     /**
      * Sucht das neue Ziel aus
@@ -388,6 +424,7 @@ public class GameContent implements Drawable {
      * @param targetNumber 0 für zufällige Auswahl, 1-... für explizite Auswahl des Ziels
      * @return Das Ziel
      */
+    /*
     private Target chooseTarget(int x, int y, int targetNumber) {
         int targetScores [] = {1, 2, 4, 8};
         double targetProps [] = {0.6, 0.8, 0.95};
@@ -410,6 +447,7 @@ public class GameContent implements Drawable {
 
         return new Target(x, y, getGraphicsStream(levelName, targetName), targetScores[targetIndex]);
     }
+     */
 
 
     /**

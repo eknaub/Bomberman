@@ -262,7 +262,6 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
      */
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-
         if(gestureDetector.onTouchEvent(event))
             return true;
         else
@@ -319,9 +318,13 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
         return true;
     }
 
+    @Override public boolean onSingleTapUp(MotionEvent e) {
+        gameContent.activatePlantBomb();
+        return true;
+    }
+
     // Nicht genutzte Gesten
     @Override public void onShowPress(MotionEvent e) {}
-    @Override public boolean onSingleTapUp(MotionEvent e) { return false; }
     @Override public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) { return false; }
     @Override public void onLongPress(MotionEvent e) {}
 
