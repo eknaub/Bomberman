@@ -239,6 +239,7 @@ public class GameContent implements Drawable {
         }
         if(toRemove.size() > 0) {
             for(Exam exam : toRemove) {
+                //TODO: Explosion logik
                 targetTiles[exam.getY()][exam.getX()] = null;
                 targets.remove(exam);
                 detonationTimes.remove(exam);
@@ -515,6 +516,24 @@ public class GameContent implements Drawable {
         }
     }
 
+    public  void startTimeThread() {
+        if(runningTimeThread) return;
+        runningTimeThread = true;
+        resetElapsedTime();
+        timeThread = new Thread(new Runnable() {
+            public void run() {
+                while (runningTimeThread) {
+                    increaseElapsedTime(0.01);
+
+                    try {
+                        Thread.sleep(10);
+                    } catch (InterruptedException ex) {
+                        runningTimeThread=false;
+                    }
+                }
+            }});
+        timeThread.start();
+    }
 
     @Nullable
     private TileGraphics getTileByCharacter(char c, int xIndex, int yIndex) {
@@ -535,26 +554,9 @@ public class GameContent implements Drawable {
             case 'S': return new Student(xIndex, yIndex, getGraphicsStream(levelName, "student"));
             case 'u':
             case 'U': return new Upgrade(xIndex, yIndex, getGraphicsStream(levelName, "upgrade"));
+            case 'x':
+            case 'X': return new Explosion(xIndex, yIndex, getGraphicsStream(levelName, "explosion"));
         }
         return null;
-    }
-
-    public  void startTimeThread() {
-        if(runningTimeThread) return;
-        runningTimeThread = true;
-        resetElapsedTime();
-        timeThread = new Thread(new Runnable() {
-            public void run() {
-                while (runningTimeThread) {
-                    increaseElapsedTime(0.01);
-
-                    try {
-                        Thread.sleep(10);
-                    } catch (InterruptedException ex) {
-                        runningTimeThread=false;
-                    }
-                }
-            }});
-        timeThread.start();
     }
 }

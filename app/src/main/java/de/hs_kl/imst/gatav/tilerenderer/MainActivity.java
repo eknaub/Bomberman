@@ -31,7 +31,7 @@ public class MainActivity extends AppCompatActivity {
 
         AssetManager am = getResources().getAssets();
         ArrayList<String> levelList = new ArrayList<String>();  // alle Level-Namen ohne .txt
-        
+
         try {
             String[] files = am.list("levels");
             for(String s : files) {
