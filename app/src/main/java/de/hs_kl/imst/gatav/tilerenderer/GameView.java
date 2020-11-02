@@ -36,13 +36,6 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
 
     private String levelName;
 
-    private Thread timeThread;
-    private volatile boolean runningTimeThread=false;    // access to elementary data types (not double or long) are atomic and should be volatile to synchronize content
-    private volatile double elapsedTime = 0.0;
-    synchronized private void resetElapsedTime() { elapsedTime = 0.0;}
-    synchronized private double getElapsedTime() { return elapsedTime; }
-    synchronized private void increaseElapsedTime(double increment) { elapsedTime += increment; }
-
     private double maxCollectedTargets = 30;
     //test
     private int gameMode=0; // 0 game not startet, 1 game started by first fling gesture, 2 game over
@@ -91,30 +84,6 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
         gameContent.draw(canvas);
         canvas.restore();
 
-        // Layer 2 (Collected Targets, Score and Elapsed Time)
-        String collectedText = String.format("%d gesammelt", gameContent.getCollectedTargets());
-        String scoreText = String.format("Punkte: %d", gameContent.getCollectedScore());
-        String timeText = "Zeit: " + String.format("%.2f", getElapsedTime()) + " Sekunden";
-        String timeTextFake = "Zeit: " + String.format("%.2f", 200.0) + " Sekunden";
-        Rect collectedTextBounds = new Rect();
-        scoreAndTimePaint.getTextBounds(collectedText, 0, collectedText.length(), collectedTextBounds);
-        Rect scoreTextBounds = new Rect();
-        scoreAndTimePaint.getTextBounds(scoreText, 0, scoreText.length(), scoreTextBounds);
-        Rect timeTextBounds = new Rect();
-        scoreAndTimePaint.getTextBounds(timeText, 0, timeText.length(), timeTextBounds);
-        float textWidth = Math.max(scoreAndTimePaint.measureText(timeText), scoreAndTimePaint.measureText(timeTextFake))+10;
-        textWidth = Math.max(scoreAndTimePaint.measureText(collectedText), textWidth);
-        textWidth = Math.max(scoreAndTimePaint.measureText(scoreText), textWidth);
-        canvas.save();
-        canvas.translate(gameWidth - textWidth, scoreTextBounds.height());
-        canvas.drawText(collectedText, 0, 0, scoreAndTimePaint);
-        canvas.translate(0, (int) (timeTextBounds.height() * 1.5));
-        canvas.drawText(scoreText, 0, 0, scoreAndTimePaint);
-        if(gameMode==1) {   // game running
-            canvas.translate(0, (int)(timeTextBounds.height()*1.5));
-            canvas.drawText(timeText, 0, 0, scoreAndTimePaint);
-        }
-
         if(gameMode==2)
         {
             Paint textPaint = new Paint();
@@ -125,7 +94,6 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
             int yPos = (int) ((gameContent.getGameHeight() / 2) - ((textPaint.descent() + textPaint.ascent()) / 2)) ;
             canvas.drawText("Game Over!", xPos,yPos, textPaint);
         }
-        canvas.restore();
     }
 
     /**
@@ -185,15 +153,15 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
     public void surfaceDestroyed(SurfaceHolder holder) {
         // Gameloop and Time Thread beenden
         runningRenderLoop = false;
-        runningTimeThread = false;
+        gameContent.runningTimeThread = false;
         gameMode=0;
         gameOver=false;
         gameContent.resetPlayerDirection();
 
         try {
             gameThread.join();
-            if(timeThread != null)  // überhaupt gestartet?
-                timeThread.join();
+            if(gameContent.timeThread != null)  // überhaupt gestartet?
+                gameContent.timeThread.join();
         }catch(InterruptedException e) {
             e.printStackTrace();
         }
@@ -232,26 +200,6 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
             surfaceHolder.unlockCanvasAndPost(canvas);
         }
     }
-
-    public  void startTimeThread() {
-        if(runningTimeThread) return;
-        runningTimeThread = true;
-        resetElapsedTime();
-        timeThread = new Thread(new Runnable() {
-            public void run() {
-                while (runningTimeThread) {
-                    increaseElapsedTime(0.01);
-
-                    try {
-                        Thread.sleep(10);
-                    } catch (InterruptedException ex) {
-                        runningTimeThread=false;
-                    }
-                }
-            }});
-        timeThread.start();
-    }
-
 
     /**
      * Um den GestureDetector verwenden zu können, müssen die Touch-Events an diesen weitergeleitet werden
@@ -301,9 +249,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
         else if(deg >= 225 && deg < 315)
             gameContent.setPlayerDirection(Direction.DOWN);
 
-        // erster Fling startet den Zeitzähler
         gameMode=1;
-        startTimeThread();
 
         return true;
     }
@@ -319,6 +265,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
     }
 
     @Override public boolean onSingleTapUp(MotionEvent e) {
+        gameContent.startTimeThread();
         gameContent.activatePlantBomb();
         return true;
     }

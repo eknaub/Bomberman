@@ -14,16 +14,27 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
 import de.hs_kl.imst.gatav.tilerenderer.util.Direction;
 
 public class GameContent implements Drawable {
+
+    public Thread timeThread;
+    public volatile boolean runningTimeThread=false;    // access to elementary data types (not double or long) are atomic and should be volatile to synchronize content
+    private volatile double elapsedTime = 0.0;
+    synchronized private void resetElapsedTime() { elapsedTime = 0.0;}
+    synchronized private double getElapsedTime() { return elapsedTime; }
+    synchronized private void increaseElapsedTime(double increment) { elapsedTime += increment; }
+
     /**
      * Breite und Höhe des Spielfeldes in Pixel
      */
     private int gameWidth = -1;
     private int gameHeight = -1;
+
     public int getGameWidth() { return gameWidth; }
     public int getGameHeight() { return gameHeight; }
 
@@ -55,6 +66,9 @@ public class GameContent implements Drawable {
      * erscheinen kann.
      */
     private ArrayList<TileGraphics> possibleTargets = new ArrayList<>();
+
+    private Map<Exam, Double> detonationTimes = new HashMap<>();
+
 
     /**
      * Anzahl der eingesammelten Ziele
@@ -197,17 +211,40 @@ public class GameContent implements Drawable {
         return true;
     }
 
-    public boolean plantBomb() {
+    public void plantBomb() {
         int x = player.getX();
         int y = player.getY();
 
-        Exam exam = new Exam(x, y, getGraphicsStream(levelName, "exam"));
-
-        targetTiles[exam.getY()][exam.getX()] = exam;
-        targets.add(exam);
-        return true;
+        if(targetTiles[y][x] instanceof Exam){
+            //do nothing
+        }
+        else
+        {
+            Exam exam = new Exam(x, y, getGraphicsStream(levelName, "exam"));
+            targetTiles[exam.getY()][exam.getX()] = exam;
+            targets.add(exam);
+            detonationTimes.put(exam, getElapsedTime()+exam.getDetonationTime());
+        }
     }
 
+    private void checkAndTriggerExams() {
+        ArrayList<Exam> toRemove = new ArrayList<>(); //avoid ConcurrentModificationException
+        if(detonationTimes != null && detonationTimes.size() > 0)
+        {
+            for (Map.Entry<Exam, Double> entry : detonationTimes.entrySet()) {
+                if(getElapsedTime() >= entry.getValue()) {
+                    toRemove.add(entry.getKey());
+                }
+            }
+        }
+        if(toRemove.size() > 0) {
+            for(Exam exam : toRemove) {
+                targetTiles[exam.getY()][exam.getX()] = null;
+                targets.remove(exam);
+                detonationTimes.remove(exam);
+            }
+        }
+    }
 
     /**
      * Spielinhalt zeichnen
@@ -236,21 +273,19 @@ public class GameContent implements Drawable {
         player.draw(canvas);
     }
 
-
     /**
      * Spielinhalt aktualisieren (hier Player und Animation dynamischer Kacheln)
      * @param fracsec Teil einer Sekunde, der seit dem letzten Update des gesamten Spielzustandes vergangen ist
      */
     @Override
     public void update(float fracsec) {
-
         if(plantBomb)
         {
-            Log.d("HSKL", "PLANT BOMB");
             //plant bomb on spot
             plantBomb();
             resetPlantBomb();
         }
+        checkAndTriggerExams();
         // 1. Schritt: Auf mögliche Player Bewegung prüfen und ggf. durchführen/anstoßen
         // vorhandenen Player Move einmalig ausführen bzw. anstoßen, falls
         // PlayerDirection nicht IDLE ist und Player aktuell nicht in einer Animation
@@ -502,5 +537,24 @@ public class GameContent implements Drawable {
             case 'U': return new Upgrade(xIndex, yIndex, getGraphicsStream(levelName, "upgrade"));
         }
         return null;
+    }
+
+    public  void startTimeThread() {
+        if(runningTimeThread) return;
+        runningTimeThread = true;
+        resetElapsedTime();
+        timeThread = new Thread(new Runnable() {
+            public void run() {
+                while (runningTimeThread) {
+                    increaseElapsedTime(0.01);
+
+                    try {
+                        Thread.sleep(10);
+                    } catch (InterruptedException ex) {
+                        runningTimeThread=false;
+                    }
+                }
+            }});
+        timeThread.start();
     }
 }
