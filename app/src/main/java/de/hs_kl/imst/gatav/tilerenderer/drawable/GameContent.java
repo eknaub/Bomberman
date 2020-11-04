@@ -3,7 +3,6 @@ package de.hs_kl.imst.gatav.tilerenderer.drawable;
 import android.content.Context;
 import android.content.res.AssetManager;
 import android.graphics.Canvas;
-import android.graphics.Paint;
 import android.util.Log;
 
 import androidx.annotation.Nullable;
@@ -13,7 +12,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -57,9 +55,9 @@ public class GameContent implements Drawable {
     private TileGraphics[][] targetTiles;   // [zeilen][spalten]
 
     /**
-     * Beinhaltet Referenzen auf alle Ziele
+     * Beinhaltet Referenzen auf alle Ziele (studenten)
      */
-    private ArrayList<TileGraphics> targets = new ArrayList<>();
+    private ArrayList<TileGraphics> studentTargets = new ArrayList<>();
 
     /**
      * Beinhaltet Referenzen auf Kacheln (hier alle vom Typ {@link Floor}), auf welchen ein Ziel
@@ -68,6 +66,7 @@ public class GameContent implements Drawable {
     private ArrayList<TileGraphics> possibleTargets = new ArrayList<>();
 
     private Map<Exam, Double> detonationTimes = new HashMap<>();
+    private Map<Explosion, Double> explosionTimes = new HashMap<>();
 
 
     /**
@@ -184,29 +183,11 @@ public class GameContent implements Drawable {
         // Hinterher steht der Spieler logisch bereits auf der neuen Position
         player.move(newX, newY);
 
-        /*
-        // Vierter Schritt: Prüfen ob auf der Zielkachel ein Target existiert
-        if(targetTiles[newY][newX] != null && targetTiles[newY][newX] instanceof Target) {
-            collectedTargets++;
-            Target tar = (Target) targetTiles[newY][newX];
-            collectedScore += tar.getScore();
-            // Altes Ziel entfernen
-            targets.remove(targetTiles[newY][newX]);
+        // Vierter Schritt: Check ob Zielkachel upgrade ist, wenn ja, increment
+        if(targetTiles[newY][newX] != null && targetTiles[newY][newX] instanceof Upgrade) {
+            player.incrementExplosionRadius();
             targetTiles[newY][newX] = null;
-            // Neues Ziel erzeugen
-            createNewTarget();
         }
-         */
-        /*
-        // Prüfen ob auf der Zielposition das dynamische Target existert => Sonderpunkte :-)
-        if(dynTarget!=null) {
-            if(samePosition(player, dynTarget)) {
-                collectedScore += dynTarget.getScore();
-                dynamicTiles.remove(dynTarget);
-                dynTarget = null;
-            }
-        }
-        */
 
         return true;
     }
@@ -222,7 +203,6 @@ public class GameContent implements Drawable {
         {
             Exam exam = new Exam(x, y, getGraphicsStream(levelName, "exam"));
             targetTiles[exam.getY()][exam.getX()] = exam;
-            targets.add(exam);
             detonationTimes.put(exam, getElapsedTime()+exam.getDetonationTime());
         }
     }
@@ -239,10 +219,59 @@ public class GameContent implements Drawable {
         }
         if(toRemove.size() > 0) {
             for(Exam exam : toRemove) {
-                //TODO: Explosion logik
-                targetTiles[exam.getY()][exam.getX()] = null;
-                targets.remove(exam);
                 detonationTimes.remove(exam);
+                targetTiles[exam.getY()][exam.getX()] = null;
+                int explosionRadius = player.getExplosionRadius();
+                int startX = exam.getX() - explosionRadius;
+                int endX = exam.getX() + explosionRadius;
+                int startY = exam.getY() - explosionRadius;
+                int endY = exam.getY() + explosionRadius;
+
+                for(int x = startX; x <= endX; ++x) {
+                    if(checkIfExplosionCanBeDrawn(exam.getY(), x)) {
+                        Explosion exp = new Explosion(x, exam.getY(), getGraphicsStream(levelName, "explosion"));
+                        targetTiles[exam.getY()][x] = exp;
+                        explosionTimes.put(exp, getElapsedTime()+exp.getExplosionTime());
+                    }
+                }
+
+                for(int y = startY; y <= endY; ++y) {
+                    if(checkIfExplosionCanBeDrawn(y, exam.getX())) {
+                        Explosion exp = new Explosion(exam.getX(), y, getGraphicsStream(levelName, "explosion"));
+                        targetTiles[y][exam.getX()] = exp;
+                        explosionTimes.put(exp, getElapsedTime()+exp.getExplosionTime());
+                    }
+                }
+            }
+        }
+    }
+
+    private boolean checkIfExplosionCanBeDrawn(int y, int x)
+    {
+        if(tiles[y][x] instanceof Floor ||
+            tiles[y][x] instanceof Player ||
+            tiles[y][x] instanceof Chest ||
+            tiles[y][x] instanceof Student ||
+            tiles[y][x] instanceof Upgrade
+        )
+            return true;
+        return false;
+    }
+
+    private void checkAndRemoveExplosions() {
+        ArrayList<Explosion> toRemove = new ArrayList<>(); //avoid ConcurrentModificationException
+        if(explosionTimes != null && explosionTimes.size() > 0)
+        {
+            for (Map.Entry<Explosion, Double> entry : explosionTimes.entrySet()) {
+                if(getElapsedTime() >= entry.getValue()) {
+                    toRemove.add(entry.getKey());
+                }
+            }
+        }
+        if(toRemove.size() > 0) {
+            for(Explosion exp : toRemove) {
+                explosionTimes.remove(exp);
+                targetTiles[exp.getY()][exp.getX()] = null;
             }
         }
     }
@@ -287,6 +316,7 @@ public class GameContent implements Drawable {
             resetPlantBomb();
         }
         checkAndTriggerExams();
+        checkAndRemoveExplosions();
         // 1. Schritt: Auf mögliche Player Bewegung prüfen und ggf. durchführen/anstoßen
         // vorhandenen Player Move einmalig ausführen bzw. anstoßen, falls
         // PlayerDirection nicht IDLE ist und Player aktuell nicht in einer Animation
