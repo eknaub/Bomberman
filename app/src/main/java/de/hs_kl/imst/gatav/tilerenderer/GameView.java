@@ -36,7 +36,6 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
 
     private String levelName;
 
-    private double maxCollectedTargets = 30;
     //test
     private int gameMode=0; // 0 game not startet, 1 game started by first fling gesture, 2 game over
 
@@ -187,7 +186,8 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
             if(!gameOver)
                 updateContent(fracsec); // kompletten Spielzustand aktualisieren
 
-            if(gameContent!=null && gameContent.getCollectedTargets() >= maxCollectedTargets) {
+            if(gameContent!=null &&
+                    (gameContent.getStudentTargetsSize() == 0 || gameContent.getPlayerHitHimself())) {
                 gameMode = 2;
                 gameOver = true; // Game over
             }

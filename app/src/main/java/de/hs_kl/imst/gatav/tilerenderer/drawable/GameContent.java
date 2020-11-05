@@ -55,9 +55,15 @@ public class GameContent implements Drawable {
     private TileGraphics[][] targetTiles;   // [zeilen][spalten]
 
     /**
+     * Bevor die Explosion auf das targetTile gezeichnet wird, wird das Item das davor drin war gemerkt
+     */
+    private TileGraphics[][] targetTilesBeforeExplosion;
+
+    /**
      * Beinhaltet Referenzen auf alle Ziele (studenten)
      */
     private ArrayList<TileGraphics> studentTargets = new ArrayList<>();
+    public int getStudentTargetsSize() { return studentTargets.size(); }
 
     /**
      * Beinhaltet Referenzen auf Kacheln (hier alle vom Typ {@link Floor}), auf welchen ein Ziel
@@ -68,18 +74,8 @@ public class GameContent implements Drawable {
     private Map<Exam, Double> detonationTimes = new HashMap<>();
     private Map<Explosion, Double> explosionTimes = new HashMap<>();
 
-
-    /**
-     * Anzahl der eingesammelten Ziele
-     */
-    private int collectedTargets = 0;
-    public int getCollectedTargets() { return collectedTargets; }
-
-    /**
-     * Anzahl der gesammelten Punkte
-     */
-    private int collectedScore = 0;
-    public int getCollectedScore() { return collectedScore; }
+    private boolean playerHitHimself = false;
+    public boolean getPlayerHitHimself() { return playerHitHimself; }
 
     /**
      * Beinhaltet Referenz auf Spieler, der bewegt wird.
@@ -192,7 +188,7 @@ public class GameContent implements Drawable {
         return true;
     }
 
-    public void plantBomb() {
+    public void placeExam() {
         int x = player.getX();
         int y = player.getY();
 
@@ -229,30 +225,38 @@ public class GameContent implements Drawable {
 
                 for(int x = startX; x <= endX; ++x) {
                     if(checkIfExplosionCanBeDrawn(exam.getY(), x)) {
-                        Explosion exp = new Explosion(x, exam.getY(), getGraphicsStream(levelName, "explosion"));
-                        targetTiles[exam.getY()][x] = exp;
-                        explosionTimes.put(exp, getElapsedTime()+exp.getExplosionTime());
+                        handleExplosionOnTargetTile(exam.getY(), x);
                     }
                 }
 
                 for(int y = startY; y <= endY; ++y) {
                     if(checkIfExplosionCanBeDrawn(y, exam.getX())) {
-                        Explosion exp = new Explosion(exam.getX(), y, getGraphicsStream(levelName, "explosion"));
-                        targetTiles[y][exam.getX()] = exp;
-                        explosionTimes.put(exp, getElapsedTime()+exp.getExplosionTime());
+                        handleExplosionOnTargetTile(y, exam.getX());
                     }
                 }
             }
         }
     }
 
+    private void handleExplosionOnTargetTile(int y, int x)
+    {
+        if(!playerHitHimself && samePosition(tiles[y][x], player)) {
+            dynamicTiles.remove(player);
+            player = null;
+            playerHitHimself = true;
+        }
+        targetTilesBeforeExplosion[y][x] = targetTiles[y][x];
+        Explosion exp = new Explosion(x, y, getGraphicsStream(levelName, "explosion"));
+        targetTiles[y][x] = exp;
+        explosionTimes.put(exp, getElapsedTime()+exp.getExplosionTime());
+    }
+
     private boolean checkIfExplosionCanBeDrawn(int y, int x)
     {
         if(tiles[y][x] instanceof Floor ||
-            tiles[y][x] instanceof Player ||
-            tiles[y][x] instanceof Chest ||
-            tiles[y][x] instanceof Student ||
-            tiles[y][x] instanceof Upgrade
+            targetTiles[y][x] instanceof Chest ||
+            targetTiles[y][x] instanceof Student ||
+            targetTiles[y][x] instanceof Upgrade
         )
             return true;
         return false;
@@ -270,8 +274,24 @@ public class GameContent implements Drawable {
         }
         if(toRemove.size() > 0) {
             for(Explosion exp : toRemove) {
+                int x = exp.getX();
+                int y = exp.getY();
                 explosionTimes.remove(exp);
-                targetTiles[exp.getY()][exp.getX()] = null;
+                targetTiles[y][x] = null;
+
+                if(targetTilesBeforeExplosion[y][x] instanceof Chest) {
+                    //TODO: Prozent chance upgrade zu zeichen mit random
+                    targetTiles[y][x] = new Upgrade(x, y, getGraphicsStream(levelName, "upgrade"));
+                    targetTilesBeforeExplosion[y][x] = null;
+                }
+                else if(targetTilesBeforeExplosion[y][x] instanceof Student) {
+                    studentTargets.remove(targetTilesBeforeExplosion[y][x]);
+                    targetTilesBeforeExplosion[y][x] = null;
+                }
+                else if(samePosition(tiles[y][x], exp)) {
+                    Log.d("HSKL", "handleExplosionOnTargetTile: im a player, GAMEOVER");
+                    playerHitHimself = true;
+                }
             }
         }
     }
@@ -300,7 +320,8 @@ public class GameContent implements Drawable {
             dynTarget.draw(canvas);
          */
         // Spieler zeichnen
-        player.draw(canvas);
+        if(player != null)
+            player.draw(canvas);
     }
 
     /**
@@ -311,8 +332,7 @@ public class GameContent implements Drawable {
     public void update(float fracsec) {
         if(plantBomb)
         {
-            //plant bomb on spot
-            plantBomb();
+            placeExam();
             resetPlantBomb();
         }
         checkAndTriggerExams();
@@ -321,7 +341,7 @@ public class GameContent implements Drawable {
         // vorhandenen Player Move einmalig ausführen bzw. anstoßen, falls
         // PlayerDirection nicht IDLE ist und Player aktuell nicht in einer Animation
         //Log.d("updateGameContent", ""+isPlayerDirectionIDLE()+" "+player.isMoving());
-        if(!isPlayerDirectionIDLE() && !player.isMoving())
+        if(player != null && !isPlayerDirectionIDLE() && !player.isMoving())
             movePlayer(getPlayerDirection());
         // Dynamisches Ziel vielleicht erzeugen
         /*
@@ -337,7 +357,7 @@ public class GameContent implements Drawable {
 
         // 3. Schritt: Animationen auf Ende überprüfen und ggf. wieder freischalten
         // Player Move fertig ausgeführt => Sperre für neues Player Event freischalten
-        if(!player.isMoving())
+        if(player != null && !player.isMoving())
             resetPlayerDirection();
         // Animation des dynamischen Ziels abgeschlossen
         /*
@@ -373,10 +393,12 @@ public class GameContent implements Drawable {
         // Zweiter Schritt: basierend auf dem Inhalt der Leveldatei die Datenstrukturen befüllen
         tiles = new TileGraphics[levelLines.size()][];
         targetTiles = new TileGraphics[levelLines.size()][];
+        targetTilesBeforeExplosion = new TileGraphics[levelLines.size()][];
 
         for(int yIndex = 0; yIndex < levelLines.size(); yIndex++) {
             tiles[yIndex] = new TileGraphics[maxLineLength];
             targetTiles[yIndex] = new TileGraphics[maxLineLength];
+            targetTilesBeforeExplosion[yIndex] = new TileGraphics[maxLineLength];
             String line = levelLines.get(yIndex);
             for(int xIndex = 0; xIndex < maxLineLength && xIndex < line.length(); xIndex++) {
                 TileGraphics tg = getTileByCharacter(line.charAt(xIndex), xIndex, yIndex);
@@ -390,7 +412,16 @@ public class GameContent implements Drawable {
                     if (player != null)
                         throw new IOException("Invalid level file, contains more than one player!");
                     player = (Player) tg;
-                } else {                            // Wall Kacheln
+                }
+                else if(tg instanceof Student || tg instanceof Chest) {
+                    possibleTargets.add(tg);
+                    tiles[yIndex][xIndex] = getTileByCharacter('f', xIndex, yIndex);
+                    targetTiles[yIndex][xIndex] = tg;
+
+                    if(tg instanceof Student)
+                        studentTargets.add(tg);
+                }
+                else {                            // Wall Kacheln
                     tiles[yIndex][xIndex] = tg;
                 }
             }
