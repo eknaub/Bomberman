@@ -74,8 +74,8 @@ public class GameContent implements Drawable {
     private Map<Exam, Double> detonationTimes = new HashMap<>();
     private Map<Explosion, Double> explosionTimes = new HashMap<>();
 
-    private boolean playerHitHimself = false;
-    public boolean getPlayerHitHimself() { return playerHitHimself; }
+    private boolean isPlayerDead = false;
+    public boolean isPlayerDead() { return isPlayerDead; }
 
     /**
      * Beinhaltet Referenz auf Spieler, der bewegt wird.
@@ -240,15 +240,14 @@ public class GameContent implements Drawable {
 
     private void handleExplosionOnTargetTile(int y, int x)
     {
-        if(!playerHitHimself && samePosition(tiles[y][x], player)) {
-            dynamicTiles.remove(player);
-            player = null;
-            playerHitHimself = true;
-        }
         targetTilesBeforeExplosion[y][x] = targetTiles[y][x];
         Explosion exp = new Explosion(x, y, getGraphicsStream(levelName, "explosion"));
         targetTiles[y][x] = exp;
         explosionTimes.put(exp, getElapsedTime()+exp.getExplosionTime());
+        if(player != null && samePosition(exp, player)) {
+            dynamicTiles.remove(player);
+            player = null;
+        }
     }
 
     private boolean checkIfExplosionCanBeDrawn(int y, int x)
@@ -288,9 +287,8 @@ public class GameContent implements Drawable {
                     studentTargets.remove(targetTilesBeforeExplosion[y][x]);
                     targetTilesBeforeExplosion[y][x] = null;
                 }
-                else if(samePosition(tiles[y][x], exp)) {
-                    Log.d("HSKL", "handleExplosionOnTargetTile: im a player, GAMEOVER");
-                    playerHitHimself = true;
+                else if(player == null) {
+                    isPlayerDead = true;
                 }
             }
         }

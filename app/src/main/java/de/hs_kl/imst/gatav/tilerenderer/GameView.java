@@ -4,9 +4,7 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.Rect;
 
-import android.util.Log;
 import android.util.Pair;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
@@ -187,7 +185,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
                 updateContent(fracsec); // kompletten Spielzustand aktualisieren
 
             if(gameContent!=null &&
-                    (gameContent.getStudentTargetsSize() == 0 || gameContent.getPlayerHitHimself())) {
+                    (gameContent.getStudentTargetsSize() == 0 || gameContent.isPlayerDead())) {
                 gameMode = 2;
                 gameOver = true; // Game over
             }
