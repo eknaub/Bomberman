@@ -35,7 +35,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
     private String levelName;
 
     //test
-    private int gameMode=0; // 0 game not startet, 1 game started by first fling gesture, 2 game over
+    private int gameMode=0; // 0 game not startet, 1 game started by first fling gesture, 2 game won, 3 game lost
 
     private float gameWidth = -1;
     private float gameHeight = -1;
@@ -81,7 +81,8 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
         gameContent.draw(canvas);
         canvas.restore();
 
-        if(gameMode==2)
+        //TODO: Endscreen für gewonnen und verloren verschieden
+        if(gameMode==2 || gameMode==3)
         {
             Paint textPaint = new Paint();
             textPaint.setColor(Color.RED);
@@ -185,9 +186,12 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
                 updateContent(fracsec); // kompletten Spielzustand aktualisieren
 
             if(gameContent!=null &&
-                    (gameContent.getStudentTargetsSize() == 0 || gameContent.isPlayerDead())) {
-                gameMode = 2;
+                    (gameContent.isStudentsAllDead() || gameContent.isPlayerDead())) {
                 gameOver = true; // Game over
+                if(gameContent.isStudentsAllDead())
+                    gameMode = 2;
+                if(gameContent.isPlayerDead())
+                    gameMode = 3;
             }
 
             Canvas canvas = surfaceHolder.lockCanvas();

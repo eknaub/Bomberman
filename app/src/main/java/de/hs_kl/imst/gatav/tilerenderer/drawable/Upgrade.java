@@ -8,6 +8,7 @@ import java.io.InputStream;
 
 public class Upgrade extends TileGraphics {
     private Paint floorPaint = new Paint();
+    static private double dropChance = 0.25;
 
     public Upgrade(int x, int y, InputStream is) {
         super(x, y, is);
@@ -15,6 +16,7 @@ public class Upgrade extends TileGraphics {
         tilePaint.setColor(Color.parseColor("#149942"));
     }
 
+    public static double getDropChance() { return dropChance; }
 
     /**
      * {@inheritDoc}

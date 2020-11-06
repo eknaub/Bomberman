@@ -63,7 +63,7 @@ public class GameContent implements Drawable {
      * Beinhaltet Referenzen auf alle Ziele (studenten)
      */
     private ArrayList<TileGraphics> studentTargets = new ArrayList<>();
-    public int getStudentTargetsSize() { return studentTargets.size(); }
+    public boolean isStudentsAllDead() { return studentTargets.size() > 0 ? false : true; }
 
     /**
      * Beinhaltet Referenzen auf Kacheln (hier alle vom Typ {@link Floor}), auf welchen ein Ziel
@@ -73,6 +73,7 @@ public class GameContent implements Drawable {
 
     private Map<Exam, Double> detonationTimes = new HashMap<>();
     private Map<Explosion, Double> explosionTimes = new HashMap<>();
+    private Map<Grade, Double> gradeTimes = new HashMap<>();
 
     private boolean isPlayerDead = false;
     public boolean isPlayerDead() { return isPlayerDead; }
@@ -218,21 +219,53 @@ public class GameContent implements Drawable {
                 detonationTimes.remove(exam);
                 targetTiles[exam.getY()][exam.getX()] = null;
                 int explosionRadius = player.getExplosionRadius();
-                int startX = exam.getX() - explosionRadius;
-                int endX = exam.getX() + explosionRadius;
-                int startY = exam.getY() - explosionRadius;
-                int endY = exam.getY() + explosionRadius;
+                int startX = exam.getX();
+                int startY = exam.getY();
+                int lowX = exam.getX() - explosionRadius;
+                int highX = exam.getX() + explosionRadius;
+                int lowY = exam.getY() - explosionRadius;
+                int highY = exam.getY() + explosionRadius;
 
-                for(int x = startX; x <= endX; ++x) {
-                    if(checkIfExplosionCanBeDrawn(exam.getY(), x)) {
-                        handleExplosionOnTargetTile(exam.getY(), x);
+                //Set new borders if out of map, add 1 because there is a wall around the map
+                if(lowX <= 0) lowX = 1;
+                if(highX > targetTiles[exam.getY()].length - 1) highX = targetTiles[exam.getY()].length - 2;
+                if(lowY <= 0) lowY = 1;
+                if(highY > targetTiles.length - 1) highY = targetTiles.length - 2;
+
+                for(int x = startX; x <= highX; ++x) {
+                    if(!isTileWall(exam.getY(), x)) {
+                        if (isTileDrawable(exam.getY(), x)) {
+                            handleExplosionOnTargetTile(exam.getY(), x);
+                        }
                     }
+                    else break; //Break the Loop if tile is a wall
                 }
 
-                for(int y = startY; y <= endY; ++y) {
-                    if(checkIfExplosionCanBeDrawn(y, exam.getX())) {
-                        handleExplosionOnTargetTile(y, exam.getX());
+                for(int x = startX; x >= lowX; --x) {
+                    if(!isTileWall(exam.getY(), x)) {
+                        if (isTileDrawable(exam.getY(), x)) {
+                            handleExplosionOnTargetTile(exam.getY(), x);
+                        }
                     }
+                    else break;
+                }
+
+                for(int y = startY; y <= highY; ++y) {
+                    if(!isTileWall(y, exam.getX())) {
+                        if (isTileDrawable(y, exam.getX())) {
+                            handleExplosionOnTargetTile(y, exam.getX());
+                        }
+                    }
+                    else break;
+                }
+
+                for(int y = startY; y >= lowY; --y) {
+                    if(!isTileWall(y, exam.getX())) {
+                        if (isTileDrawable(y, exam.getX())) {
+                            handleExplosionOnTargetTile(y, exam.getX());
+                        }
+                    }
+                    else break;
                 }
             }
         }
@@ -250,7 +283,13 @@ public class GameContent implements Drawable {
         }
     }
 
-    private boolean checkIfExplosionCanBeDrawn(int y, int x)
+    private boolean isTileWall(int y, int x) {
+        if(tiles[y][x] instanceof Wall)
+            return true;
+        return false;
+    }
+
+    private boolean isTileDrawable(int y, int x)
     {
         if(tiles[y][x] instanceof Floor ||
             targetTiles[y][x] instanceof Chest ||
@@ -279,17 +318,44 @@ public class GameContent implements Drawable {
                 targetTiles[y][x] = null;
 
                 if(targetTilesBeforeExplosion[y][x] instanceof Chest) {
-                    //TODO: Prozent chance upgrade zu zeichen mit random
-                    targetTiles[y][x] = new Upgrade(x, y, getGraphicsStream(levelName, "upgrade"));
-                    targetTilesBeforeExplosion[y][x] = null;
+                    double rand = random.nextDouble();
+                    if(rand < Upgrade.getDropChance()) {
+                        targetTiles[y][x] = new Upgrade(x, y, getGraphicsStream(levelName, "upgrade"));
+                        targetTilesBeforeExplosion[y][x] = null;
+                    }
                 }
                 else if(targetTilesBeforeExplosion[y][x] instanceof Student) {
-                    studentTargets.remove(targetTilesBeforeExplosion[y][x]);
-                    targetTilesBeforeExplosion[y][x] = null;
+                    Grade grade = new Grade(x, y, getGraphicsStream(levelName, "grade"));
+                    targetTiles[y][x] = grade;
+                    gradeTimes.put(grade, getElapsedTime() + grade.getRemoveTime());
                 }
-                else if(player == null) {
+                if(player == null) {
                     isPlayerDead = true;
                 }
+            }
+        }
+    }
+
+    private void checkAndRemoveGrades() {
+        ArrayList<Grade> toRemove = new ArrayList<>(); //avoid ConcurrentModificationException
+        if(gradeTimes != null && gradeTimes.size() > 0)
+        {
+            for (Map.Entry<Grade, Double> entry : gradeTimes.entrySet()) {
+                if(getElapsedTime() >= entry.getValue()) {
+                    toRemove.add(entry.getKey());
+                }
+            }
+        }
+        if(toRemove.size() > 0) {
+            for(Grade grade : toRemove) {
+                Log.d("HSKL", "checkAndRemoveGrades: remove grade");
+                int x = grade.getX();
+                int y = grade.getY();
+                gradeTimes.remove(grade);
+                targetTiles[y][x] = null;
+
+                studentTargets.remove(targetTilesBeforeExplosion[y][x]);
+                targetTilesBeforeExplosion[y][x] = null;
             }
         }
     }
@@ -335,6 +401,7 @@ public class GameContent implements Drawable {
         }
         checkAndTriggerExams();
         checkAndRemoveExplosions();
+        checkAndRemoveGrades();
         // 1. Schritt: Auf mögliche Player Bewegung prüfen und ggf. durchführen/anstoßen
         // vorhandenen Player Move einmalig ausführen bzw. anstoßen, falls
         // PlayerDirection nicht IDLE ist und Player aktuell nicht in einer Animation
@@ -606,7 +673,7 @@ public class GameContent implements Drawable {
             case 'c':
             case 'C': return new Chest(xIndex, yIndex, getGraphicsStream(levelName, "chest"));
             case 'g':
-            case 'G': return new Five(xIndex, yIndex, getGraphicsStream(levelName, "grade"));
+            case 'G': return new Grade(xIndex, yIndex, getGraphicsStream(levelName, "grade"));
             case 'e':
             case 'E': return new Exam(xIndex, yIndex, getGraphicsStream(levelName, "exam"));
             case 's':
