@@ -55,9 +55,15 @@ public class GameContent implements Drawable {
     private TileGraphics[][] targetTiles;   // [zeilen][spalten]
 
     /**
+     * Bevor die Explosion auf das targetTile gezeichnet wird, wird das Item das davor drin war gemerkt
+     */
+    private TileGraphics[][] targetTilesBeforeExplosion;
+
+    /**
      * Beinhaltet Referenzen auf alle Ziele (studenten)
      */
     private ArrayList<TileGraphics> studentTargets = new ArrayList<>();
+    public boolean isStudentsAllDead() { return studentTargets.size() > 0 ? false : true; }
 
     /**
      * Beinhaltet Referenzen auf Kacheln (hier alle vom Typ {@link Floor}), auf welchen ein Ziel
@@ -67,19 +73,10 @@ public class GameContent implements Drawable {
 
     private Map<Exam, Double> detonationTimes = new HashMap<>();
     private Map<Explosion, Double> explosionTimes = new HashMap<>();
+    private Map<Grade, Double> gradeTimes = new HashMap<>();
 
-
-    /**
-     * Anzahl der eingesammelten Ziele
-     */
-    private int collectedTargets = 0;
-    public int getCollectedTargets() { return collectedTargets; }
-
-    /**
-     * Anzahl der gesammelten Punkte
-     */
-    private int collectedScore = 0;
-    public int getCollectedScore() { return collectedScore; }
+    private boolean isPlayerDead = false;
+    public boolean isPlayerDead() { return isPlayerDead; }
 
     /**
      * Beinhaltet Referenz auf Spieler, der bewegt wird.
@@ -192,7 +189,7 @@ public class GameContent implements Drawable {
         return true;
     }
 
-    public void plantBomb() {
+    public void placeExam() {
         int x = player.getX();
         int y = player.getY();
 
@@ -222,37 +219,82 @@ public class GameContent implements Drawable {
                 detonationTimes.remove(exam);
                 targetTiles[exam.getY()][exam.getX()] = null;
                 int explosionRadius = player.getExplosionRadius();
-                int startX = exam.getX() - explosionRadius;
-                int endX = exam.getX() + explosionRadius;
-                int startY = exam.getY() - explosionRadius;
-                int endY = exam.getY() + explosionRadius;
+                int startX = exam.getX();
+                int startY = exam.getY();
+                int lowX = exam.getX() - explosionRadius;
+                int highX = exam.getX() + explosionRadius;
+                int lowY = exam.getY() - explosionRadius;
+                int highY = exam.getY() + explosionRadius;
 
-                for(int x = startX; x <= endX; ++x) {
-                    if(checkIfExplosionCanBeDrawn(exam.getY(), x)) {
-                        Explosion exp = new Explosion(x, exam.getY(), getGraphicsStream(levelName, "explosion"));
-                        targetTiles[exam.getY()][x] = exp;
-                        explosionTimes.put(exp, getElapsedTime()+exp.getExplosionTime());
+                //Set new borders if out of map, add 1 because there is a wall around the map
+                if(lowX <= 0) lowX = 1;
+                if(highX > targetTiles[exam.getY()].length - 1) highX = targetTiles[exam.getY()].length - 2;
+                if(lowY <= 0) lowY = 1;
+                if(highY > targetTiles.length - 1) highY = targetTiles.length - 2;
+
+                for(int x = startX; x <= highX; ++x) {
+                    if(!isTileWall(exam.getY(), x)) {
+                        if (isTileDrawable(exam.getY(), x)) {
+                            handleExplosionOnTargetTile(exam.getY(), x);
+                        }
                     }
+                    else break; //Break the Loop if tile is a wall
                 }
 
-                for(int y = startY; y <= endY; ++y) {
-                    if(checkIfExplosionCanBeDrawn(y, exam.getX())) {
-                        Explosion exp = new Explosion(exam.getX(), y, getGraphicsStream(levelName, "explosion"));
-                        targetTiles[y][exam.getX()] = exp;
-                        explosionTimes.put(exp, getElapsedTime()+exp.getExplosionTime());
+                for(int x = startX; x >= lowX; --x) {
+                    if(!isTileWall(exam.getY(), x)) {
+                        if (isTileDrawable(exam.getY(), x)) {
+                            handleExplosionOnTargetTile(exam.getY(), x);
+                        }
                     }
+                    else break;
+                }
+
+                for(int y = startY; y <= highY; ++y) {
+                    if(!isTileWall(y, exam.getX())) {
+                        if (isTileDrawable(y, exam.getX())) {
+                            handleExplosionOnTargetTile(y, exam.getX());
+                        }
+                    }
+                    else break;
+                }
+
+                for(int y = startY; y >= lowY; --y) {
+                    if(!isTileWall(y, exam.getX())) {
+                        if (isTileDrawable(y, exam.getX())) {
+                            handleExplosionOnTargetTile(y, exam.getX());
+                        }
+                    }
+                    else break;
                 }
             }
         }
     }
 
-    private boolean checkIfExplosionCanBeDrawn(int y, int x)
+    private void handleExplosionOnTargetTile(int y, int x)
+    {
+        targetTilesBeforeExplosion[y][x] = targetTiles[y][x];
+        Explosion exp = new Explosion(x, y, getGraphicsStream(levelName, "explosion"));
+        targetTiles[y][x] = exp;
+        explosionTimes.put(exp, getElapsedTime()+exp.getExplosionTime());
+        if(player != null && samePosition(exp, player)) {
+            dynamicTiles.remove(player);
+            player = null;
+        }
+    }
+
+    private boolean isTileWall(int y, int x) {
+        if(tiles[y][x] instanceof Wall)
+            return true;
+        return false;
+    }
+
+    private boolean isTileDrawable(int y, int x)
     {
         if(tiles[y][x] instanceof Floor ||
-            tiles[y][x] instanceof Player ||
-            tiles[y][x] instanceof Chest ||
-            tiles[y][x] instanceof Student ||
-            tiles[y][x] instanceof Upgrade
+            targetTiles[y][x] instanceof Chest ||
+            targetTiles[y][x] instanceof Student ||
+            targetTiles[y][x] instanceof Upgrade
         )
             return true;
         return false;
@@ -270,8 +312,50 @@ public class GameContent implements Drawable {
         }
         if(toRemove.size() > 0) {
             for(Explosion exp : toRemove) {
+                int x = exp.getX();
+                int y = exp.getY();
                 explosionTimes.remove(exp);
-                targetTiles[exp.getY()][exp.getX()] = null;
+                targetTiles[y][x] = null;
+
+                if(targetTilesBeforeExplosion[y][x] instanceof Chest) {
+                    double rand = random.nextDouble();
+                    if(rand < Upgrade.getDropChance()) {
+                        targetTiles[y][x] = new Upgrade(x, y, getGraphicsStream(levelName, "upgrade"));
+                        targetTilesBeforeExplosion[y][x] = null;
+                    }
+                }
+                else if(targetTilesBeforeExplosion[y][x] instanceof Student) {
+                    Grade grade = new Grade(x, y, getGraphicsStream(levelName, "grade"));
+                    targetTiles[y][x] = grade;
+                    gradeTimes.put(grade, getElapsedTime() + grade.getRemoveTime());
+                }
+                if(player == null) {
+                    isPlayerDead = true;
+                }
+            }
+        }
+    }
+
+    private void checkAndRemoveGrades() {
+        ArrayList<Grade> toRemove = new ArrayList<>(); //avoid ConcurrentModificationException
+        if(gradeTimes != null && gradeTimes.size() > 0)
+        {
+            for (Map.Entry<Grade, Double> entry : gradeTimes.entrySet()) {
+                if(getElapsedTime() >= entry.getValue()) {
+                    toRemove.add(entry.getKey());
+                }
+            }
+        }
+        if(toRemove.size() > 0) {
+            for(Grade grade : toRemove) {
+                Log.d("HSKL", "checkAndRemoveGrades: remove grade");
+                int x = grade.getX();
+                int y = grade.getY();
+                gradeTimes.remove(grade);
+                targetTiles[y][x] = null;
+
+                studentTargets.remove(targetTilesBeforeExplosion[y][x]);
+                targetTilesBeforeExplosion[y][x] = null;
             }
         }
     }
@@ -300,7 +384,8 @@ public class GameContent implements Drawable {
             dynTarget.draw(canvas);
          */
         // Spieler zeichnen
-        player.draw(canvas);
+        if(player != null)
+            player.draw(canvas);
     }
 
     /**
@@ -311,17 +396,17 @@ public class GameContent implements Drawable {
     public void update(float fracsec) {
         if(plantBomb)
         {
-            //plant bomb on spot
-            plantBomb();
+            placeExam();
             resetPlantBomb();
         }
         checkAndTriggerExams();
         checkAndRemoveExplosions();
+        checkAndRemoveGrades();
         // 1. Schritt: Auf mögliche Player Bewegung prüfen und ggf. durchführen/anstoßen
         // vorhandenen Player Move einmalig ausführen bzw. anstoßen, falls
         // PlayerDirection nicht IDLE ist und Player aktuell nicht in einer Animation
         //Log.d("updateGameContent", ""+isPlayerDirectionIDLE()+" "+player.isMoving());
-        if(!isPlayerDirectionIDLE() && !player.isMoving())
+        if(player != null && !isPlayerDirectionIDLE() && !player.isMoving())
             movePlayer(getPlayerDirection());
         // Dynamisches Ziel vielleicht erzeugen
         /*
@@ -337,7 +422,7 @@ public class GameContent implements Drawable {
 
         // 3. Schritt: Animationen auf Ende überprüfen und ggf. wieder freischalten
         // Player Move fertig ausgeführt => Sperre für neues Player Event freischalten
-        if(!player.isMoving())
+        if(player != null && !player.isMoving())
             resetPlayerDirection();
         // Animation des dynamischen Ziels abgeschlossen
         /*
@@ -373,10 +458,12 @@ public class GameContent implements Drawable {
         // Zweiter Schritt: basierend auf dem Inhalt der Leveldatei die Datenstrukturen befüllen
         tiles = new TileGraphics[levelLines.size()][];
         targetTiles = new TileGraphics[levelLines.size()][];
+        targetTilesBeforeExplosion = new TileGraphics[levelLines.size()][];
 
         for(int yIndex = 0; yIndex < levelLines.size(); yIndex++) {
             tiles[yIndex] = new TileGraphics[maxLineLength];
             targetTiles[yIndex] = new TileGraphics[maxLineLength];
+            targetTilesBeforeExplosion[yIndex] = new TileGraphics[maxLineLength];
             String line = levelLines.get(yIndex);
             for(int xIndex = 0; xIndex < maxLineLength && xIndex < line.length(); xIndex++) {
                 TileGraphics tg = getTileByCharacter(line.charAt(xIndex), xIndex, yIndex);
@@ -390,7 +477,16 @@ public class GameContent implements Drawable {
                     if (player != null)
                         throw new IOException("Invalid level file, contains more than one player!");
                     player = (Player) tg;
-                } else {                            // Wall Kacheln
+                }
+                else if(tg instanceof Student || tg instanceof Chest) {
+                    possibleTargets.add(tg);
+                    tiles[yIndex][xIndex] = getTileByCharacter('f', xIndex, yIndex);
+                    targetTiles[yIndex][xIndex] = tg;
+
+                    if(tg instanceof Student)
+                        studentTargets.add(tg);
+                }
+                else {                            // Wall Kacheln
                     tiles[yIndex][xIndex] = tg;
                 }
             }
@@ -577,7 +673,7 @@ public class GameContent implements Drawable {
             case 'c':
             case 'C': return new Chest(xIndex, yIndex, getGraphicsStream(levelName, "chest"));
             case 'g':
-            case 'G': return new Five(xIndex, yIndex, getGraphicsStream(levelName, "grade"));
+            case 'G': return new Grade(xIndex, yIndex, getGraphicsStream(levelName, "grade"));
             case 'e':
             case 'E': return new Exam(xIndex, yIndex, getGraphicsStream(levelName, "exam"));
             case 's':
