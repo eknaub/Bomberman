@@ -6,7 +6,7 @@ import android.graphics.Paint;
 
 import java.io.InputStream;
 
-public class Chest extends TileGraphics {
+public class  Chest extends TileGraphics {
     private Paint floorPaint = new Paint();
 
     public Chest(int x, int y, InputStream is) {
