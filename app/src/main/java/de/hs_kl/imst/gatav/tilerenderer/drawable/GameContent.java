@@ -288,8 +288,17 @@ public class GameContent implements Drawable {
             player = null;
 
         }
+     /*   ArrayList<Student> toremov= new ArrayList<>();
 
+        for( Student st : studentTargets){
+            if(st != null && samePosition(exp, st))
+            toremov.add(st);
+        }
+for (Student st : toremov){
+    if(st != null && samePosition(exp, st))
+    studentTargets.remove(st);
 
+}*/
     }
 
     private boolean isTileWall(int y, int x) {
@@ -396,7 +405,7 @@ public class GameContent implements Drawable {
             }
 
         // Dynamisches Ziel zeichnen
-        for(Student st :dynTarget2 ) {
+        for(Student st :studentTargets ) {
             if (st != null)
                 st.draw(canvas);
         }
