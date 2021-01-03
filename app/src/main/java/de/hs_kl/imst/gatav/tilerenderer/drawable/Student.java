@@ -6,7 +6,7 @@ import android.graphics.Paint;
 
 import java.io.InputStream;
 
-public class Student extends TileGraphics {
+public class    Student extends MovableTileGraphics {
     private Paint floorPaint = new Paint();
 
     public Student(int x, int y, InputStream is) {
