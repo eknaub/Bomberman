@@ -5,6 +5,7 @@ import android.content.res.AssetManager;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.util.Log;
+import android.widget.Switch;
 
 import androidx.annotation.Nullable;
 
@@ -81,6 +82,7 @@ public class GameContent implements Drawable {
     private boolean isPlayerDead = false;
     public boolean isPlayerDead() { return isPlayerDead; }
 
+
     /**
      * Beinhaltet Referenz auf Spieler, der bewegt wird.
      */
@@ -90,12 +92,6 @@ public class GameContent implements Drawable {
      * Dynamisches Ziel
      */
 
-    private Student dynTarget = null;
-
-    public Student getDynTarget() { return dynTarget;}
-
-    private List<Student> dynTarget2 = new ArrayList<>();
-
     /**
      * Wird in {@link GameContent#movePlayer(Direction)} verwendet, um dem Game Thread
      * die Bewegungsrichtung des Players zu übergeben.
@@ -103,7 +99,6 @@ public class GameContent implements Drawable {
      */
     private volatile Direction playerDirection = Direction.IDLE;
     synchronized public void resetPlayerDirection() { playerDirection = Direction.IDLE;}
-    synchronized public void resetStudentDirection() { playerDirection = Direction.IDLE;}
     synchronized public boolean isPlayerDirectionIDLE() { return playerDirection == Direction.IDLE; }
     synchronized public void setPlayerDirection(Direction newDirection) { playerDirection = newDirection;}
     synchronized public Direction getPlayerDirection() { return playerDirection; }
@@ -286,19 +281,39 @@ public class GameContent implements Drawable {
         if(player != null && samePosition(exp, player)) {
             dynamicTiles.remove(player);
             player = null;
-
         }
-     /*   ArrayList<Student> toremov= new ArrayList<>();
-
+       ArrayList<Student> toremov= new ArrayList<>();
         for( Student st : studentTargets){
-            if(st != null && samePosition(exp, st))
+            if(st != null && samePosition(exp, st)){
+                //new grade   dickt wenn der student tot ist
+                Grade grade = new Grade(x, y, getGraphicsStream(levelName, "grade"));
+                targetTiles[y][x] = grade;
+                gradeTimes.put(grade, getElapsedTime() + grade.getRemoveTime());
+                Log.d("hskl","test3");
             toremov.add(st);
+           }
         }
 for (Student st : toremov){
-    if(st != null && samePosition(exp, st))
-    studentTargets.remove(st);
+    if(st != null && samePosition(exp, st)) {
+        studentTargets.remove(st);
+        dynamicTiles.remove(st);
+    }
+}
 
-}*/
+
+
+
+    }
+    private void checkandremoveplyer(){
+        for( Student st : studentTargets){
+        if(player != null && samePosition((Student)st, player)) {
+            dynamicTiles.remove(player);
+            player = null;
+        }
+            if(player == null) {
+                isPlayerDead = true;
+            }
+        }
     }
 
     private boolean isTileWall(int y, int x) {
@@ -317,7 +332,11 @@ for (Student st : toremov){
             return true;
         return false;
     }
-
+    private boolean isTilestud(int y, int x) {
+        if(tiles[y][x] instanceof Student)
+            return true;
+        return false;
+    }
 
 
 
@@ -345,12 +364,14 @@ for (Student st : toremov){
                         targetTilesBeforeExplosion[y][x] = null;
                     }
                 }
-                else if(targetTilesBeforeExplosion[y][x] instanceof Student) {
+               /* else
+
+                    if(targetTilesBeforeExplosion[y][x] instanceof Student) {
                     Grade grade = new Grade(x, y, getGraphicsStream(levelName, "grade"));
                     targetTiles[y][x] = grade;
                     gradeTimes.put(grade, getElapsedTime() + grade.getRemoveTime());
                     Log.d("hskl","test3");
-                }
+                }*/
                 if(player == null) {
                     isPlayerDead = true;
                 }
@@ -376,8 +397,8 @@ for (Student st : toremov){
                 gradeTimes.remove(grade);
                 targetTiles[y][x] = null;
 
-                studentTargets.remove(targetTilesBeforeExplosion[y][x]);
-                dynamicTiles.remove(targetTilesBeforeExplosion[y][x]);
+                //studentTargets.remove(targetTilesBeforeExplosion[y][x]);
+                //dynamicTiles.remove(targetTilesBeforeExplosion[y][x]);
                 targetTilesBeforeExplosion[y][x] = null;
 
 
@@ -425,9 +446,11 @@ for (Student st : toremov){
             placeExam();
             resetPlantBomb();
         }
+
         checkAndTriggerExams();
         checkAndRemoveExplosions();
         checkAndRemoveGrades();
+        checkandremoveplyer();
         // 1. Schritt: Auf mögliche Player Bewegung prüfen und ggf. durchführen/anstoßen
         // vorhandenen Player Move einmalig ausführen bzw. anstoßen, falls
         // PlayerDirection nicht IDLE ist und Player aktuell nicht in einer Animation
@@ -461,6 +484,16 @@ for (Student st : toremov){
      * @throws IOException falls beim Laden etwas schief geht (IO Fehler, Fehler in Leveldatei)
      */
     private void loadLevel(InputStream levelIs) throws IOException {
+
+        int i=0;
+        int l=0;
+        switch(levelName) {
+            case "level1": l=3;
+                 break;
+            case "level2": l=4 ; break;
+            case "level3": l=5 ; break;
+            case "level4":l=6 ; break;
+        }
         // Erster Schritt: Leveldatei zeilenweise lesen und Inhalt zwischenspeichern. Zudem ermitteln, wie breit der Level maximal ist.
         // Spielfeldgröße ermitteln
         ArrayList<String> levelLines = new ArrayList<>();
@@ -482,11 +515,14 @@ for (Student st : toremov){
         targetTilesBeforeExplosion = new TileGraphics[levelLines.size()][];
 
         for(int yIndex = 0; yIndex < levelLines.size(); yIndex++) {
+
             tiles[yIndex] = new TileGraphics[maxLineLength];
             targetTiles[yIndex] = new TileGraphics[maxLineLength];
             targetTilesBeforeExplosion[yIndex] = new TileGraphics[maxLineLength];
             String line = levelLines.get(yIndex);
             for(int xIndex = 0; xIndex < maxLineLength && xIndex < line.length(); xIndex++) {
+                int randomx=(int)(Math.random() * 10);
+                int randomy=(int)(Math.random() * 10);
                 TileGraphics tg = getTileByCharacter(line.charAt(xIndex), xIndex, yIndex);
                 // Floor Tiles sind gleichzeitig Kacheln, auf denen Ziele erscheinen können
                 if(tg instanceof Floor) {
@@ -504,9 +540,11 @@ for (Student st : toremov){
                     tiles[yIndex][xIndex] = getTileByCharacter('f', xIndex, yIndex);
                     targetTiles[yIndex][xIndex] = tg;
                        if(tg  instanceof Student) {
-                           studentTargets.add((Student) tg);
-                           dynamicTiles.add((Student) tg);
+
+                           Log.d("HSKL", "hallllllllllllllllllllo"+(int)(Math.random() * 10));
                        }
+                    Log.d("HSKL", "hallllllllllllllllllllo"+(int)(Math.random() * 10));
+
                 }
 
                  else{
@@ -515,14 +553,21 @@ for (Student st : toremov){
                     tiles[yIndex][xIndex] = tg;
                 }
 
-
+                 if(!(tg instanceof Player)&&!(isTileWall(yIndex,xIndex))&&i<l){
+                     Student st = new Student(xIndex, yIndex, getGraphicsStream(levelName, "student"));
+                     studentTargets.add(st);
+                     dynamicTiles.add(st);
+                     i+=1;
+                 }
                 }
             }
 
         }
 
 
+       private void  creatstudent(){
 
+       }
     /**
      * Erzeugt ein dynamisches Ziel, sofern das Ziel passable ist.
      *
@@ -650,6 +695,24 @@ for (Student st : toremov){
     private boolean samePosition(TileGraphics a, TileGraphics b) {
         if(a.getX() == b.getX() && a.getY() == b.getY())
             return true;
+        return false;
+    }
+
+    private boolean sameEXPosition(TileGraphics a, TileGraphics b) {
+        float ax = a.getX();
+        float ay =a.getY();
+        float by =b.getY();
+        for(float bx=b.getX() ;ax<bx; ){
+           bx=bx+0.2f;
+
+        }
+        for(float bx=b.getX() ;ax>bx; ){
+            bx=bx-0.2f;
+
+        }
+        if(a.getX() <= b.getX()){
+    return true;
+        }
         return false;
     }
 
