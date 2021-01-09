@@ -6,6 +6,8 @@ import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import androidx.appcompat.app.AppCompatActivity;
+
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -24,10 +26,17 @@ import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
+
+    private MediaPlayer hintergrund;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+// Sound
+        hintergrund = MediaPlayer.create(MainActivity.this, R.raw.background);
+        hintergrund.setLooping(true);
+        hintergrund.start();
 
         AssetManager am = getResources().getAssets();
         ArrayList<String> levelList = new ArrayList<String>();  // alle Level-Namen ohne .txt
@@ -43,6 +52,9 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
 
+
+
+
         ArrayAdapter<String> itemsAdapter =
                 new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, levelList);
 
@@ -57,8 +69,11 @@ public class MainActivity extends AppCompatActivity {
                 Intent intent = new Intent(MainActivity.this, MainGameActivity.class);
                 intent.putExtra("level", level);
                 startActivity(intent);
+
 			}
 		});
     }
+
+
 }
 

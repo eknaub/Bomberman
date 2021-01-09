@@ -3,9 +3,7 @@ package de.hs_kl.imst.gatav.tilerenderer.drawable;
 import android.content.Context;
 import android.content.res.AssetManager;
 import android.graphics.Canvas;
-import android.graphics.Paint;
 import android.util.Log;
-import android.widget.Switch;
 
 import androidx.annotation.Nullable;
 
@@ -16,7 +14,6 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
@@ -124,7 +121,8 @@ public class GameContent implements Drawable {
      * Name des Levels
      */
     private String levelName;
-
+    //sound
+private GameSound gamesound;
 
     /**
      * @param context context :)>
@@ -134,7 +132,8 @@ public class GameContent implements Drawable {
         this.context = context;
         this.assetManager = context.getAssets();
         this.levelName = levelName;
-
+        //sound
+gamesound = new GameSound(context);
         // Level laden mit Wall (W), Floor (F) und Player (P)
         // Target wird im geladenen Level zum Schluss zusätzlich gesetzt
         try {
@@ -281,7 +280,12 @@ public class GameContent implements Drawable {
         if(player != null && samePosition(exp, player)) {
             dynamicTiles.remove(player);
             player = null;
+            gamesound.playohno();
         }
+        //sound
+        gamesound.playexplosionsound();
+
+
        ArrayList<Student> toremov= new ArrayList<>();
         for( Student st : studentTargets){
             if(st != null && samePosition(exp, st)){
@@ -291,12 +295,14 @@ public class GameContent implements Drawable {
                 gradeTimes.put(grade, getElapsedTime() + grade.getRemoveTime());
                 Log.d("hskl","test3");
             toremov.add(st);
+
            }
         }
 for (Student st : toremov){
     if(st != null && samePosition(exp, st)) {
         studentTargets.remove(st);
         dynamicTiles.remove(st);
+        gamesound.playmist();
     }
 }
 
@@ -312,6 +318,7 @@ for (Student st : toremov){
         }
             if(player == null) {
                 isPlayerDead = true;
+                gamesound.playohno();
             }
         }
     }
@@ -351,6 +358,7 @@ for (Student st : toremov){
             }
         }
         if(toRemove.size() > 0) {
+
             for(Explosion exp : toRemove) {
                 int x = exp.getX();
                 int y = exp.getY();
@@ -362,6 +370,7 @@ for (Student st : toremov){
                     if(rand < Upgrade.getDropChance()) {
                         targetTiles[y][x] = new Upgrade(x, y, getGraphicsStream(levelName, "upgrade"));
                         targetTilesBeforeExplosion[y][x] = null;
+                        gamesound.playupgrad();
                     }
                 }
                /* else
@@ -374,8 +383,10 @@ for (Student st : toremov){
                 }*/
                 if(player == null) {
                     isPlayerDead = true;
+
                 }
             }
+
         }
     }
 
@@ -494,6 +505,7 @@ for (Student st : toremov){
             case "level3": l=5 ; break;
             case "level4":l=6 ; break;
         }
+
         // Erster Schritt: Leveldatei zeilenweise lesen und Inhalt zwischenspeichern. Zudem ermitteln, wie breit der Level maximal ist.
         // Spielfeldgröße ermitteln
         ArrayList<String> levelLines = new ArrayList<>();
@@ -541,9 +553,7 @@ for (Student st : toremov){
                     targetTiles[yIndex][xIndex] = tg;
                        if(tg  instanceof Student) {
 
-                           Log.d("HSKL", "hallllllllllllllllllllo"+(int)(Math.random() * 10));
                        }
-                    Log.d("HSKL", "hallllllllllllllllllllo"+(int)(Math.random() * 10));
 
                 }
 
@@ -565,9 +575,6 @@ for (Student st : toremov){
         }
 
 
-       private void  creatstudent(){
-
-       }
     /**
      * Erzeugt ein dynamisches Ziel, sofern das Ziel passable ist.
      *
