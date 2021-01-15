@@ -83,7 +83,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
 
         //TODO: Endscreen für gewonnen und verloren verschieden
         // todo  punkte  und zeit
-        if(gameMode==2 || gameMode==3)
+        if( gameMode==3)
         {
 
             Paint textPaint = new Paint();
@@ -94,6 +94,16 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
             int yPos = (int) ((gameContent.getGameHeight() / 2) - ((textPaint.descent() + textPaint.ascent()) / 2)) ;
             canvas.drawText("Game Over!", xPos,yPos, textPaint);
             //Todo zurük zu level seite und die andre levels sind zu bis dass man der vorherige level gewonnen hat
+
+        }
+        if(gameMode==2 ){
+            Paint textPaint = new Paint();
+            textPaint.setColor(Color.GREEN);
+            textPaint.setTextAlign(Paint.Align.CENTER);
+            textPaint.setTextSize(50);
+            int xPos = (gameContent.getGameWidth() / 2);
+            int yPos = (int) ((gameContent.getGameHeight() / 2) - ((textPaint.descent() + textPaint.ascent()) / 2)) ;
+            canvas.drawText("Victory", xPos,yPos, textPaint);
 
         }
 
