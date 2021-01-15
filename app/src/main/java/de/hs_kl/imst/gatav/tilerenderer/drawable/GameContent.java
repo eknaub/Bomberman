@@ -164,6 +164,9 @@ public class GameContent implements Drawable {
 
         // Zweiter Schritt: Prüfen ob Spieler sich an Zielposition bewegen kann (Zielkachel.isPassable())
         TileGraphics targetTile = tiles[newY][newX];
+        TileGraphics targetTargetTile = targetTiles[newY][newX];
+        if(targetTargetTile != null && !targetTargetTile.isPassable())
+            return false;
         if(targetTile == null || !targetTile.isPassable())
             return false;
 
@@ -263,33 +266,39 @@ public class GameContent implements Drawable {
 
     private void handleExplosionOnTargetTile(int y, int x)
     {
-        targetTilesBeforeExplosion[y][x] = targetTiles[y][x];
-        Explosion exp = new Explosion(x, y, getGraphicsStream(levelName, "explosion"));
-        targetTiles[y][x] = exp;
-        explosionTimes.put(exp, getElapsedTime()+exp.getExplosionTime());
-        if(player != null && samePosition(exp, player)) {
-            dynamicTiles.remove(player);
-            player = null;
-            gamesound.playOhNoSound();
+        //Dont draw explosion on existing exam
+        if(targetTiles[y][x] instanceof Exam) {
+            //Do nothing
         }
-        //sound
-        gamesound.playExplosionSound();
+        else {
+            targetTilesBeforeExplosion[y][x] = targetTiles[y][x];
+            Explosion exp = new Explosion(x, y, getGraphicsStream(levelName, "explosion"));
+            targetTiles[y][x] = exp;
+            explosionTimes.put(exp, getElapsedTime() + exp.getExplosionTime());
+            if (player != null && samePosition(exp, player)) {
+                dynamicTiles.remove(player);
+                player = null;
+                gamesound.playOhNoSound();
+            }
+            //sound
+            gamesound.playExplosionSound();
 
-        ArrayList<Student> toRemove= new ArrayList<>();
-        for( Student st : studentTargets) {
-            if(st != null && samePosition(exp, st)){
-                //new grade dickt wenn der student tot ist
-                Grade grade = new Grade(x, y, getGraphicsStream(levelName, "grade"));
-                targetTiles[y][x] = grade;
-                gradeTimes.put(grade, getElapsedTime() + grade.getRemoveTime());
-                toRemove.add(st);
-           }
-        }
-        for (Student st : toRemove) {
-            if (st != null && samePosition(exp, st)) {
-                studentTargets.remove(st);
-                dynamicTiles.remove(st);
-                gamesound.playMistSound();
+            ArrayList<Student> toRemove = new ArrayList<>();
+            for (Student st : studentTargets) {
+                if (st != null && samePosition(exp, st)) {
+                    //new grade dickt wenn der student tot ist
+                    Grade grade = new Grade(x, y, getGraphicsStream(levelName, "grade"));
+                    targetTiles[y][x] = grade;
+                    gradeTimes.put(grade, getElapsedTime() + grade.getRemoveTime());
+                    toRemove.add(st);
+                }
+            }
+            for (Student st : toRemove) {
+                if (st != null && samePosition(exp, st)) {
+                    studentTargets.remove(st);
+                    dynamicTiles.remove(st);
+                    gamesound.playMistSound();
+                }
             }
         }
     }
@@ -458,7 +467,6 @@ public class GameContent implements Drawable {
             case "level1": l=3; break;
             case "level2": l=4; break;
             case "level3": l=5; break;
-            case "level4": l=6; break;
         }
 
         // Erster Schritt: Leveldatei zeilenweise lesen und Inhalt zwischenspeichern. Zudem ermitteln, wie breit der Level maximal ist.
@@ -498,7 +506,7 @@ public class GameContent implements Drawable {
                         throw new IOException("Invalid level file, contains more than one player!");
                     player = (Player) tg;
                 }
-                else if(tg instanceof Student||  tg instanceof Chest) {
+                else if(tg instanceof Student || tg instanceof Chest) {
                     possibleTargets.add(tg);
                     tiles[yIndex][xIndex] = getTileByCharacter('f', xIndex, yIndex);
                     targetTiles[yIndex][xIndex] = tg;
