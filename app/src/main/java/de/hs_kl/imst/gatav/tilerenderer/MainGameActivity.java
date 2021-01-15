@@ -2,8 +2,6 @@ package de.hs_kl.imst.gatav.tilerenderer;
 
 import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
-import android.view.Menu;
-import android.view.MenuItem;
 
 public class MainGameActivity extends AppCompatActivity {
 
@@ -18,6 +16,4 @@ public class MainGameActivity extends AppCompatActivity {
         gameView = new GameView(this, level);
         setContentView(gameView);
     }
-
-
 }

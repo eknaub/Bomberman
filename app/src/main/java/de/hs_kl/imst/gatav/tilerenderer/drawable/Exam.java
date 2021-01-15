@@ -1,13 +1,9 @@
 package de.hs_kl.imst.gatav.tilerenderer.drawable;
 
-import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Paint;
-
 import java.io.InputStream;
 
 public class Exam extends TileGraphics {
-    private Paint floorPaint = new Paint();
     private double detonationTime = 3.0; //how long until boom
 
     public Exam(int x, int y, InputStream is) {

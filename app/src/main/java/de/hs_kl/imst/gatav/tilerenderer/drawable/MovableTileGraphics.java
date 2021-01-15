@@ -1,11 +1,8 @@
 package de.hs_kl.imst.gatav.tilerenderer.drawable;
 
-
 import android.graphics.Canvas;
 import android.util.Log;
-
 import java.io.InputStream;
-
 import de.hs_kl.imst.gatav.tilerenderer.util.Direction;
 
 public abstract class MovableTileGraphics extends TileGraphics {
@@ -20,7 +17,6 @@ public abstract class MovableTileGraphics extends TileGraphics {
     protected volatile Direction currentDirection = Direction.IDLE;  // aktuell keine Bewegung
     synchronized public boolean isMoving() { return currentDirection != Direction.IDLE; }
     synchronized protected void setMovingDirection(Direction newDirection) { currentDirection = newDirection; }
-
 
     public MovableTileGraphics(int x, int y, InputStream is) {
         super(x, y, is);
@@ -57,7 +53,6 @@ public abstract class MovableTileGraphics extends TileGraphics {
      */
     @Override
     public void update(float fracsec) {
-
         int deltaX = targetX - sourceX;
         int deltaY = targetY - sourceY;
 
@@ -80,7 +75,6 @@ public abstract class MovableTileGraphics extends TileGraphics {
                 setMovingDirection(Direction.IDLE);
             }
         }
-
     }
 
     /**

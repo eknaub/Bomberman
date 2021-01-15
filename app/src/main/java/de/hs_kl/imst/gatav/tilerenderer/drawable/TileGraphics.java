@@ -4,7 +4,6 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Paint;
-
 import java.io.InputStream;
 
 /**
@@ -40,7 +39,6 @@ public abstract class TileGraphics implements Drawable {
         }
     }
 
-
     /**
      * Verschieben des Blockes an neue Gitterkoordinaten
      * @param x neue X-Koordinate
@@ -51,13 +49,11 @@ public abstract class TileGraphics implements Drawable {
         this.y = y;
     }
 
-
     /**
      * {@inheritDoc}
      */
     @Override
     public void update(float fracsec) {}
-
 
     /**
      * {@inheritDoc}

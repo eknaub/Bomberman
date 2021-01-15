@@ -4,20 +4,16 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-
 import android.util.Pair;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-
 import androidx.core.view.GestureDetectorCompat;
-
 import de.hs_kl.imst.gatav.tilerenderer.drawable.GameContent;
 import de.hs_kl.imst.gatav.tilerenderer.drawable.TileGraphics;
 import de.hs_kl.imst.gatav.tilerenderer.util.Direction;
 import de.hs_kl.imst.gatav.tilerenderer.util.LevelHelper;
-
 
 /**
  * {@link SurfaceView} welches sich um die Darstellung des Spiels und Interaktion mit diesem kümmert.
@@ -25,7 +21,6 @@ import de.hs_kl.imst.gatav.tilerenderer.util.LevelHelper;
  * und -darstellung regelt.
  */
 public class GameView extends SurfaceView implements SurfaceHolder.Callback, Runnable, GestureDetector.OnGestureListener {
-
     private SurfaceHolder surfaceHolder;
 
     private Thread gameThread;
@@ -34,8 +29,13 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
 
     private String levelName;
 
-    //test
-    private int gameMode=0; // 0 game not startet, 1 game started by first fling gesture, 2 game won, 3 game lost
+    /**
+     * 0: Game not started
+     * 1: Game started by first fling gesture
+     * 2: Game won
+     * 3: Game lost
+     */
+    private int gameMode = 0;
 
     private float gameWidth = -1;
     private float gameHeight = -1;
@@ -81,11 +81,9 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
         gameContent.draw(canvas);
         canvas.restore();
 
-        //TODO: Endscreen für gewonnen und verloren verschieden
-        // todo  punkte  und zeit
-        if( gameMode==3)
+        //Todo zurük zu level seite und die andre levels sind zu bis dass man der vorherige level gewonnen hat
+        if(gameMode==3)
         {
-
             Paint textPaint = new Paint();
             textPaint.setColor(Color.RED);
             textPaint.setTextAlign(Paint.Align.CENTER);
@@ -93,10 +91,8 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
             int xPos = (gameContent.getGameWidth() / 2);
             int yPos = (int) ((gameContent.getGameHeight() / 2) - ((textPaint.descent() + textPaint.ascent()) / 2)) ;
             canvas.drawText("Game Over!", xPos,yPos, textPaint);
-            //Todo zurük zu level seite und die andre levels sind zu bis dass man der vorherige level gewonnen hat
-
         }
-        if(gameMode==2 ){
+        else if(gameMode==2) {
             Paint textPaint = new Paint();
             textPaint.setColor(Color.GREEN);
             textPaint.setTextAlign(Paint.Align.CENTER);
@@ -104,9 +100,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
             int xPos = (gameContent.getGameWidth() / 2);
             int yPos = (int) ((gameContent.getGameHeight() / 2) - ((textPaint.descent() + textPaint.ascent()) / 2)) ;
             canvas.drawText("Victory", xPos,yPos, textPaint);
-
         }
-
     }
 
     /**
@@ -124,7 +118,6 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
      */
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
-        // Gameloop anwerfen
         gameThread = new Thread(this);
         gameThread.start();
     }
@@ -141,7 +134,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
     public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
         int border = 0;                                                     // darf's ein wenig Rand sein?
         gameWidth = width - border;                                         // hinzufügen
-        gameHeight = (int)((float)gameWidth / ((float) width / height));    // Höhe entsprechend anpassen
+        gameHeight = (int)(gameWidth / ((float) width / height));           // Höhe entsprechend anpassen
 
         // Ermitteln der Größe der einzelnen Elemente
         Pair<Integer, Integer> maxLevelSize = LevelHelper.getLargestLevelDimensions(getContext());

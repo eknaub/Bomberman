@@ -3,10 +3,8 @@ package de.hs_kl.imst.gatav.tilerenderer.drawable;
 import android.content.Context;
 import android.content.res.AssetManager;
 import android.graphics.Canvas;
-import android.util.Log;
 
 import androidx.annotation.Nullable;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,15 +14,14 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
-
 import de.hs_kl.imst.gatav.tilerenderer.util.Direction;
 
 public class GameContent implements Drawable {
 
     public Thread timeThread;
-    public volatile boolean runningTimeThread=false;    // access to elementary data types (not double or long) are atomic and should be volatile to synchronize content
+    public volatile boolean runningTimeThread = false; // access to elementary data types (not double or long) are atomic and should be volatile to synchronize content
     private volatile double elapsedTime = 0.0;
-    synchronized private void resetElapsedTime() { elapsedTime = 0.0;}
+    synchronized private void resetElapsedTime() { elapsedTime = 0.0; }
     synchronized private double getElapsedTime() { return elapsedTime; }
     synchronized private void increaseElapsedTime(double increment) { elapsedTime += increment; }
 
@@ -79,15 +76,10 @@ public class GameContent implements Drawable {
     private boolean isPlayerDead = false;
     public boolean isPlayerDead() { return isPlayerDead; }
 
-
     /**
      * Beinhaltet Referenz auf Spieler, der bewegt wird.
      */
     private Player player = null;
-
-    /**
-     * Dynamisches Ziel
-     */
 
     /**
      * Wird in {@link GameContent#movePlayer(Direction)} verwendet, um dem Game Thread
@@ -105,10 +97,9 @@ public class GameContent implements Drawable {
     synchronized public void activatePlantBomb() { plantBomb = true; }
 
     /**
-     * Zufallszahlengenerator zum Hinzufügen neuer Ziele
+     * Zufallszahlengenerator für zufällige Dinge (Upgrade spawn aus Kiste oder nicht)
      */
     private Random random = new Random();
-
 
     private Context context;
 
@@ -121,8 +112,11 @@ public class GameContent implements Drawable {
      * Name des Levels
      */
     private String levelName;
-    //sound
-private GameSound gamesound;
+
+    /**
+     * Gamesound
+     */
+    private GameSound gamesound;
 
     /**
      * @param context context :)>
@@ -133,7 +127,7 @@ private GameSound gamesound;
         this.assetManager = context.getAssets();
         this.levelName = levelName;
         //sound
-gamesound = new GameSound(context);
+        gamesound = new GameSound(context);
         // Level laden mit Wall (W), Floor (F) und Player (P)
         // Target wird im geladenen Level zum Schluss zusätzlich gesetzt
         try {
@@ -144,9 +138,7 @@ gamesound = new GameSound(context);
 
         // Player ist animiert und muss deshalb updates auf seine Position erfahren
         dynamicTiles.add(player);
-
     }
-
 
     /**
      * Überprüfung der Möglichkeit einer Verschiebung des Players in eine vorgegebene Richtung
@@ -158,7 +150,6 @@ gamesound = new GameSound(context);
      * @return true falls Zug erfolgreich durchgeführt bzw. angestoßen, false falls Zug nicht durchgeführt
      */
     public boolean movePlayer(Direction direction) {
-
         // Erster Schritt: Basierend auf Zugrichtung die Zielposition bestimmen
         int newX = -1;
         int newY = -1;
@@ -193,11 +184,10 @@ gamesound = new GameSound(context);
         int x = player.getX();
         int y = player.getY();
 
-        if(targetTiles[y][x] instanceof Exam){
+        if(targetTiles[y][x] instanceof Exam) {
             //do nothing
         }
-        else
-        {
+        else {
             Exam exam = new Exam(x, y, getGraphicsStream(levelName, "exam"));
             targetTiles[exam.getY()][exam.getX()] = exam;
             detonationTimes.put(exam, getElapsedTime()+exam.getDetonationTime());
@@ -280,45 +270,39 @@ gamesound = new GameSound(context);
         if(player != null && samePosition(exp, player)) {
             dynamicTiles.remove(player);
             player = null;
-            gamesound.playohno();
+            gamesound.playOhNoSound();
         }
         //sound
-        gamesound.playexplosionsound();
+        gamesound.playExplosionSound();
 
-
-       ArrayList<Student> toremov= new ArrayList<>();
-        for( Student st : studentTargets){
+        ArrayList<Student> toRemove= new ArrayList<>();
+        for( Student st : studentTargets) {
             if(st != null && samePosition(exp, st)){
-                //new grade   dickt wenn der student tot ist
+                //new grade dickt wenn der student tot ist
                 Grade grade = new Grade(x, y, getGraphicsStream(levelName, "grade"));
                 targetTiles[y][x] = grade;
                 gradeTimes.put(grade, getElapsedTime() + grade.getRemoveTime());
-                Log.d("hskl","test3");
-            toremov.add(st);
-
+                toRemove.add(st);
            }
         }
-for (Student st : toremov){
-    if(st != null && samePosition(exp, st)) {
-        studentTargets.remove(st);
-        dynamicTiles.remove(st);
-        gamesound.playmist();
-    }
-}
-
-
-
-
-    }
-    private void checkandremoveplyer(){
-        for( Student st : studentTargets){
-        if(player != null && samePosition((Student)st, player)) {
-            dynamicTiles.remove(player);
-            player = null;
+        for (Student st : toRemove) {
+            if (st != null && samePosition(exp, st)) {
+                studentTargets.remove(st);
+                dynamicTiles.remove(st);
+                gamesound.playMistSound();
+            }
         }
+    }
+
+    private void checkAndRemovePlayer() {
+        for(Student st : studentTargets) {
+            if(player != null && samePosition(st, player)) {
+                dynamicTiles.remove(player);
+                player = null;
+            }
             if(player == null) {
                 isPlayerDead = true;
-                gamesound.playohno();
+                gamesound.playOhNoSound();
             }
         }
     }
@@ -329,23 +313,16 @@ for (Student st : toremov){
         return false;
     }
 
-    private boolean isTileDrawable(int y, int x)
-    {
+    private boolean isTileDrawable(int y, int x) {
         if(tiles[y][x] instanceof Floor ||
             targetTiles[y][x] instanceof Chest ||
             targetTiles[y][x] instanceof Student ||
             targetTiles[y][x] instanceof Upgrade
-        )
+        ) {
             return true;
+        }
         return false;
     }
-    private boolean isTilestud(int y, int x) {
-        if(tiles[y][x] instanceof Student)
-            return true;
-        return false;
-    }
-
-
 
     private void checkAndRemoveExplosions() {
         ArrayList<Explosion> toRemove = new ArrayList<>(); //avoid ConcurrentModificationException
@@ -370,23 +347,15 @@ for (Student st : toremov){
                     if(rand < Upgrade.getDropChance()) {
                         targetTiles[y][x] = new Upgrade(x, y, getGraphicsStream(levelName, "upgrade"));
                         targetTilesBeforeExplosion[y][x] = null;
-                        gamesound.playupgrad();
+                        gamesound.playUpgradeSound();
                     }
                 }
-               /* else
 
-                    if(targetTilesBeforeExplosion[y][x] instanceof Student) {
-                    Grade grade = new Grade(x, y, getGraphicsStream(levelName, "grade"));
-                    targetTiles[y][x] = grade;
-                    gradeTimes.put(grade, getElapsedTime() + grade.getRemoveTime());
-                    Log.d("hskl","test3");
-                }*/
                 if(player == null) {
                     isPlayerDead = true;
 
                 }
             }
-
         }
     }
 
@@ -402,17 +371,11 @@ for (Student st : toremov){
         }
         if(toRemove.size() > 0) {
             for(Grade grade : toRemove) {
-                Log.d("HSKL", "checkAndRemoveGrades: remove grade");
                 int x = grade.getX();
                 int y = grade.getY();
                 gradeTimes.remove(grade);
                 targetTiles[y][x] = null;
-
-                //studentTargets.remove(targetTilesBeforeExplosion[y][x]);
-                //dynamicTiles.remove(targetTilesBeforeExplosion[y][x]);
                 targetTilesBeforeExplosion[y][x] = null;
-
-
             }
         }
     }
@@ -436,12 +399,11 @@ for (Student st : toremov){
                 targetTiles[yIndex][xIndex].draw(canvas);
             }
 
-        // Dynamisches Ziel zeichnen
         for(Student st :studentTargets ) {
             if (st != null)
                 st.draw(canvas);
         }
-        // Spieler zeichnen
+
         if(player != null)
             player.draw(canvas);
     }
@@ -461,16 +423,12 @@ for (Student st : toremov){
         checkAndTriggerExams();
         checkAndRemoveExplosions();
         checkAndRemoveGrades();
-        checkandremoveplyer();
+        checkAndRemovePlayer();
         // 1. Schritt: Auf mögliche Player Bewegung prüfen und ggf. durchführen/anstoßen
         // vorhandenen Player Move einmalig ausführen bzw. anstoßen, falls
         // PlayerDirection nicht IDLE ist und Player aktuell nicht in einer Animation
-        //Log.d("updateGameContent", ""+isPlayerDirectionIDLE()+" "+player.isMoving());
         if(player != null && !isPlayerDirectionIDLE() && !player.isMoving())
             movePlayer(getPlayerDirection());
-        // Dynamisches Ziel vielleicht erzeugen
-
-
 
         // 2. Schritt: Updates bei allen dynamischen Kacheln durchführen (auch Player)
         for(TileGraphics dynamicTile : dynamicTiles)
@@ -486,8 +444,7 @@ for (Student st : toremov){
                  MoveDynamicTarget(st);
             }
         }
-   }
-
+    }
 
     /**
      * Level aus Stream laden und Datenstrukturen entsprechend initialisieren
@@ -495,15 +452,13 @@ for (Student st : toremov){
      * @throws IOException falls beim Laden etwas schief geht (IO Fehler, Fehler in Leveldatei)
      */
     private void loadLevel(InputStream levelIs) throws IOException {
-
         int i=0;
         int l=0;
         switch(levelName) {
-            case "level1": l=3;
-                 break;
-            case "level2": l=4 ; break;
-            case "level3": l=5 ; break;
-            case "level4":l=6 ; break;
+            case "level1": l=3; break;
+            case "level2": l=4; break;
+            case "level3": l=5; break;
+            case "level4": l=6; break;
         }
 
         // Erster Schritt: Leveldatei zeilenweise lesen und Inhalt zwischenspeichern. Zudem ermitteln, wie breit der Level maximal ist.
@@ -511,7 +466,7 @@ for (Student st : toremov){
         ArrayList<String> levelLines = new ArrayList<>();
         BufferedReader br = new BufferedReader(new InputStreamReader(levelIs));
         int maxLineLength = 0;
-        String currentLine = null;
+        String currentLine;
         while((currentLine = br.readLine()) != null) {
             maxLineLength = Math.max(maxLineLength, currentLine.length());
             levelLines.add(currentLine);
@@ -520,21 +475,17 @@ for (Student st : toremov){
         gameWidth = (int)(maxLineLength * TileGraphics.getTileSize());
         gameHeight = (int)(levelLines.size() * TileGraphics.getTileSize());
 
-
         // Zweiter Schritt: basierend auf dem Inhalt der Leveldatei die Datenstrukturen befüllen
         tiles = new TileGraphics[levelLines.size()][];
         targetTiles = new TileGraphics[levelLines.size()][];
         targetTilesBeforeExplosion = new TileGraphics[levelLines.size()][];
 
         for(int yIndex = 0; yIndex < levelLines.size(); yIndex++) {
-
             tiles[yIndex] = new TileGraphics[maxLineLength];
             targetTiles[yIndex] = new TileGraphics[maxLineLength];
             targetTilesBeforeExplosion[yIndex] = new TileGraphics[maxLineLength];
             String line = levelLines.get(yIndex);
             for(int xIndex = 0; xIndex < maxLineLength && xIndex < line.length(); xIndex++) {
-                int randomx=(int)(Math.random() * 10);
-                int randomy=(int)(Math.random() * 10);
                 TileGraphics tg = getTileByCharacter(line.charAt(xIndex), xIndex, yIndex);
                 // Floor Tiles sind gleichzeitig Kacheln, auf denen Ziele erscheinen können
                 if(tg instanceof Floor) {
@@ -551,29 +502,19 @@ for (Student st : toremov){
                     possibleTargets.add(tg);
                     tiles[yIndex][xIndex] = getTileByCharacter('f', xIndex, yIndex);
                     targetTiles[yIndex][xIndex] = tg;
-                       if(tg  instanceof Student) {
-
-                       }
-
                 }
-
-                 else{
-
-                    // Wall Kacheln
+                else {
                     tiles[yIndex][xIndex] = tg;
                 }
-
-                 if(!(tg instanceof Player)&&!(isTileWall(yIndex,xIndex))&&i<l){
-                     Student st = new Student(xIndex, yIndex, getGraphicsStream(levelName, "student"));
-                     studentTargets.add(st);
-                     dynamicTiles.add(st);
-                     i+=1;
-                 }
+                if(!(tg instanceof Player)&&!(isTileWall(yIndex,xIndex))&&i<l) {
+                    Student st = new Student(xIndex, yIndex, getGraphicsStream(levelName, "student"));
+                    studentTargets.add(st);
+                    dynamicTiles.add(st);
+                    i+=1;
                 }
             }
-
         }
-
+    }
 
     /**
      * Erzeugt ein dynamisches Ziel, sofern das Ziel passable ist.
@@ -586,112 +527,54 @@ for (Student st : toremov){
 
     @Nullable
     public void MoveDynamicTarget(Student st) {
-
         // Destination bestimmen, falls möglich, ansonsten Abbruch
         // 0 left, 1 right, 2 up, 3 down
         ArrayList<Integer> dl = new ArrayList<Integer>();
-        dl.add(0); dl.add(1); dl.add(2); dl.add(3);
+        dl.add(0);
+        dl.add(1);
+        dl.add(2);
+        dl.add(3);
         Collections.shuffle(dl);
 
-        TileGraphics destinationTile=null;
-        Direction destinationDirection=Direction.IDLE;
-        int destDir=-1;
-        int newX=-1, newY=-1;
+        TileGraphics destinationTile = null;
+        int newX = -1, newY = -1;
         // alle vier Richtungen zufällig durchgehen, bis die erste passt oder eben keine
 
-        for(int i=0; i<4; i++) {
-            switch(dl.get(i)) {
-                case 0: newX=st.getX()-1; newY=st.getY();
-                    destinationDirection=Direction.LEFT; destDir=0; break;
-                case 1: newX=st.getX()+1; newY=st.getY();
-                    destinationDirection=Direction.RIGHT; destDir=1; break;
-                case 2: newX=st.getX(); newY=st.getY()-1;
-                    destinationDirection=Direction.UP; destDir=2; break;
-                case 3: newX=st.getX(); newY=st.getY()+1;
-                    destinationDirection=Direction.DOWN; destDir=3; break;
+        for (int i = 0; i < 4; i++) {
+            switch (dl.get(i)) {
+                case 0:
+                    newX = st.getX() - 1;
+                    newY = st.getY();
+                    break;
+                case 1:
+                    newX = st.getX() + 1;
+                    newY = st.getY();
+                    break;
+                case 2:
+                    newX = st.getX();
+                    newY = st.getY() - 1;
+                    break;
+                case 3:
+                    newX = st.getX();
+                    newY = st.getY() + 1;
+                    break;
             }
             if ((!(newX >= 0 && newX < gameWidth && newY >= 0 && newY < gameHeight)))
                 continue;
             destinationTile = tiles[newY][newX];
-            if(destinationTile == null || !destinationTile.isPassable()) {
+            if (destinationTile == null || !destinationTile.isPassable()) {
                 destinationTile = null;
                 continue;
             }
             break;
         }
-        if(destinationTile==null)
+
+        if (destinationTile == null)
             return;
 
-
-        st.move(newX,newY);
+        st.move(newX, newY);
         st.setSpeed(0.5f);
-
-
-
-
-       /* dynTarget = new DynamicTarget(sourceTile.getX(), sourceTile.getY(), getGraphicsStream(levelName, dynTargetDirectionName));
-        dynTarget.move(newX, newY);
-        dynTarget.setSpeed(0.4f);
-        dynamicTiles.add(dynTarget);*/
-
     }
-
-
-
-
-    /**
-     * Erzeugt ein neues Ziel und sorgt dafür, dass dieses sich nicht auf der Position des Spielers
-     * oder eines vorhandenen Ziels befindet
-     * @return neues Ziel
-     */
-    /*
-    private void createNewTarget() {
-        TileGraphics targetTile = possibleTargets.get(random.nextInt(possibleTargets.size()));
-        // Sicherstellen, dass das Ziel nicht an der gleichen Position wie der Spieler erzeugt wird
-        // und sich dort nicht bereits ein Ziel befindet
-        while(samePosition(targetTile, player) || targetTiles[targetTile.getY()][targetTile.getX()]!=null)
-            targetTile = possibleTargets.get(random.nextInt(possibleTargets.size()));
-
-        // Ziel zufällig auswählen
-        Target newTarget = chooseTarget(targetTile.getX(), targetTile.getY(), 0);
-
-        targetTiles[newTarget.getY()][newTarget.getX()] = newTarget;
-        targets.add(newTarget);
-    }
-*/
-
-    /**
-     * Sucht das neue Ziel aus
-     * @param x x-Koordinate
-     * @param y y-Koordinate
-     * @param targetNumber 0 für zufällige Auswahl, 1-... für explizite Auswahl des Ziels
-     * @return Das Ziel
-     */
-    /*
-    private Target chooseTarget(int x, int y, int targetNumber) {
-        int targetScores [] = {1, 2, 4, 8};
-        double targetProps [] = {0.6, 0.8, 0.95};
-        int targetIndex;
-
-        // zufällige Auswahl des Targets nach Wahrscheinlichkeiten in targetProps
-        if(targetNumber==0) {
-            double dice = random.nextDouble();
-            targetIndex = targetProps.length;
-            while (targetIndex > 0 && dice < targetProps[targetIndex-1])
-                targetIndex--;
-            targetNumber = targetIndex+1;
-        } else  // explizite Wahl der Nummer des Targets
-        {
-            if(targetNumber<1 || targetNumber>targetScores.length)    // explizit ausgewähltes Target
-                targetNumber = 1;
-            targetIndex=targetNumber-1;
-        }
-        String targetName = "can" + targetNumber;
-
-        return new Target(x, y, getGraphicsStream(levelName, targetName), targetScores[targetIndex]);
-    }
-     */
-
 
     /**
      * Prüft ob zwei Kacheln auf den gleichen Koordinaten liegen
@@ -702,24 +585,6 @@ for (Student st : toremov){
     private boolean samePosition(TileGraphics a, TileGraphics b) {
         if(a.getX() == b.getX() && a.getY() == b.getY())
             return true;
-        return false;
-    }
-
-    private boolean sameEXPosition(TileGraphics a, TileGraphics b) {
-        float ax = a.getX();
-        float ay =a.getY();
-        float by =b.getY();
-        for(float bx=b.getX() ;ax<bx; ){
-           bx=bx+0.2f;
-
-        }
-        for(float bx=b.getX() ;ax>bx; ){
-            bx=bx-0.2f;
-
-        }
-        if(a.getX() <= b.getX()){
-    return true;
-        }
         return false;
     }
 
