@@ -1,6 +1,7 @@
 package de.hs_kl.imst.gatav.tilerenderer;
 
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -9,9 +10,11 @@ import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+
 import androidx.core.view.GestureDetectorCompat;
 import de.hs_kl.imst.gatav.tilerenderer.drawable.GameContent;
 import de.hs_kl.imst.gatav.tilerenderer.drawable.TileGraphics;
+import de.hs_kl.imst.gatav.tilerenderer.screens.EndScreen;
 import de.hs_kl.imst.gatav.tilerenderer.util.Direction;
 import de.hs_kl.imst.gatav.tilerenderer.util.LevelHelper;
 
@@ -64,7 +67,6 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
 
         scoreAndTimePaint.setTextSize(20f * context.getResources().getDisplayMetrics().density);
     }
-
     /**
      * Aktualisiert die grafische Darstellung; wird von Gameloop aufgerufen
      * @param canvas Zeichenfläche
@@ -81,25 +83,11 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
         gameContent.draw(canvas);
         canvas.restore();
 
-        //Todo zurük zu level seite und die andre levels sind zu bis dass man der vorherige level gewonnen hat
-        if(gameMode==3)
+        if(gameMode == 3 || gameMode == 2)
         {
-            Paint textPaint = new Paint();
-            textPaint.setColor(Color.RED);
-            textPaint.setTextAlign(Paint.Align.CENTER);
-            textPaint.setTextSize(50);
-            int xPos = (gameContent.getGameWidth() / 2);
-            int yPos = (int) ((gameContent.getGameHeight() / 2) - ((textPaint.descent() + textPaint.ascent()) / 2)) ;
-            canvas.drawText("Game Over!", xPos,yPos, textPaint);
-        }
-        else if(gameMode==2) {
-            Paint textPaint = new Paint();
-            textPaint.setColor(Color.GREEN);
-            textPaint.setTextAlign(Paint.Align.CENTER);
-            textPaint.setTextSize(50);
-            int xPos = (gameContent.getGameWidth() / 2);
-            int yPos = (int) ((gameContent.getGameHeight() / 2) - ((textPaint.descent() + textPaint.ascent()) / 2)) ;
-            canvas.drawText("Victory", xPos,yPos, textPaint);
+            Intent intent = new Intent(getContext(), EndScreen.class);
+            intent.putExtra("gameMode", gameMode);
+            getContext().startActivity(intent);
         }
     }
 

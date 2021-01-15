@@ -3,6 +3,7 @@ package de.hs_kl.imst.gatav.tilerenderer.drawable;
 import android.content.Context;
 import android.content.res.AssetManager;
 import android.graphics.Canvas;
+import android.util.Log;
 
 import androidx.annotation.Nullable;
 import java.io.BufferedReader;
@@ -362,7 +363,6 @@ public class GameContent implements Drawable {
 
                 if(player == null) {
                     isPlayerDead = true;
-
                 }
             }
         }
@@ -569,11 +569,19 @@ public class GameContent implements Drawable {
             }
             if ((!(newX >= 0 && newX < gameWidth && newY >= 0 && newY < gameHeight)))
                 continue;
-            destinationTile = tiles[newY][newX];
-            if (destinationTile == null || !destinationTile.isPassable()) {
-                destinationTile = null;
+
+            TileGraphics targetTile = tiles[newY][newX];
+            TileGraphics targetTargetTile = targetTiles[newY][newX];
+            
+            if(targetTargetTile != null && !targetTargetTile.isPassable()) {
+                Log.d("HSKL", "TargetTiles: " + targetTargetTile);
                 continue;
             }
+            if(targetTargetTile == null && (targetTile == null || !targetTile.isPassable())) {
+                Log.d("HSKL", "Tiles: " + targetTile);
+                continue;
+            }
+            destinationTile = targetTile;
             break;
         }
 
