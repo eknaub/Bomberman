@@ -11,6 +11,7 @@ import android.widget.TextView;
 import de.hs_kl.imst.gatav.tilerenderer.MainActivity;
 import de.hs_kl.imst.gatav.tilerenderer.MainGameActivity;
 import de.hs_kl.imst.gatav.tilerenderer.R;
+import de.hs_kl.imst.gatav.tilerenderer.util.Stats;
 
 public class EndScreen extends AppCompatActivity {
     @Override
@@ -26,10 +27,17 @@ public class EndScreen extends AppCompatActivity {
         if(gameMode == 3)
             gameState.setText("YOU LOST!");
 
+        TextView stats = findViewById(R.id.statsPlaceholder_textView);
+        stats.setText("Exams placed: " + Integer.toString(Stats.examPlacedCounter) + "\n"
+                + "Students passed: " + Integer.toString(Stats.studentsLeft) + " out of " + Integer.toString(Stats.studentsTotal) + "\n"
+                + "Time passed: " + String.format("%.2f", Stats.time) + " Seconds");
+
+
         Button backButton = findViewById(R.id.back_button);
         backButton.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View view) {
+                Stats.reset();
                 Intent intent = new Intent(EndScreen.this, MainActivity.class);
                 //Damit der Intent die neue Wurzel ist
                 intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);

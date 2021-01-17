@@ -17,6 +17,7 @@ import de.hs_kl.imst.gatav.tilerenderer.drawable.TileGraphics;
 import de.hs_kl.imst.gatav.tilerenderer.screens.EndScreen;
 import de.hs_kl.imst.gatav.tilerenderer.util.Direction;
 import de.hs_kl.imst.gatav.tilerenderer.util.LevelHelper;
+import de.hs_kl.imst.gatav.tilerenderer.util.Stats;
 
 /**
  * {@link SurfaceView} welches sich um die Darstellung des Spiels und Interaktion mit diesem kümmert.
@@ -48,7 +49,8 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
     private GameContent gameContent;
 
     private Paint scoreAndTimePaint = new Paint();
-    {   scoreAndTimePaint.setColor(Color.WHITE);
+    {
+        scoreAndTimePaint.setColor(Color.WHITE);
         scoreAndTimePaint.setTextSize(20);
     }
 
@@ -182,9 +184,11 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
                 updateContent(fracsec); // kompletten Spielzustand aktualisieren
 
             if(gameContent!=null &&
-                    (gameContent.isStudentsAllDead() || gameContent.isPlayerDead())) {
+                    (gameContent.isStudentsAllFailed() || gameContent.isPlayerDead())) {
                 gameOver = true; // Game over
-                if(gameContent.isStudentsAllDead())
+                Stats.setStudentsLeft(gameContent.getStudentsSize());
+                Stats.setTime(gameContent.getElapsedTime());
+                if(gameContent.isStudentsAllFailed())
                     gameMode = 2;
                 if(gameContent.isPlayerDead())
                     gameMode = 3;
@@ -225,6 +229,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
      */
     @Override
     public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+        gameContent.startTimeThread();
 
         // Wird der Player aktuell noch animiert, wird der Fling wegkonsumiert
         // (bei uns nur konzeptionell notwendig, da die laufende Animation in GameContent

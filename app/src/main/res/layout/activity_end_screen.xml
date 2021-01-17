@@ -11,12 +11,37 @@
         android:id="@+id/gamestate_textView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_margin="10sp"
         android:text="WIN LOSE SCREEN"
-        android:textSize="30sp" />
+        android:textSize="30sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/stats_textView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="10sp"
+        android:text="Stats:"
+        android:textSize="20sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/statsPlaceholder_textView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="10sp"
+        android:text="TextView" />
 
     <Button
         android:id="@+id/back_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Back to main screen" />
+        android:layout_gravity="right|end"
+        android:layout_margin="10sp"
+        android:background="#D8D8D8"
+        android:padding="10sp"
+        android:text="Main menu"
+        android:textColor="#000000" />
+
 </LinearLayout>

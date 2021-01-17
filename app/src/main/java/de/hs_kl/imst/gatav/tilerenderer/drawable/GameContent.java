@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import de.hs_kl.imst.gatav.tilerenderer.util.Direction;
+import de.hs_kl.imst.gatav.tilerenderer.util.Stats;
 
 public class GameContent implements Drawable {
 
@@ -23,7 +24,7 @@ public class GameContent implements Drawable {
     public volatile boolean runningTimeThread = false; // access to elementary data types (not double or long) are atomic and should be volatile to synchronize content
     private volatile double elapsedTime = 0.0;
     synchronized private void resetElapsedTime() { elapsedTime = 0.0; }
-    synchronized private double getElapsedTime() { return elapsedTime; }
+    synchronized public double getElapsedTime() { return elapsedTime; }
     synchronized private void increaseElapsedTime(double increment) { elapsedTime += increment; }
 
     /**
@@ -62,7 +63,8 @@ public class GameContent implements Drawable {
      * Beinhaltet Referenzen auf alle Ziele (studenten)
      */
     private ArrayList<Student> studentTargets = new ArrayList<>();
-    public boolean isStudentsAllDead() { return studentTargets.size() > 0 ? false : true; }
+    public boolean isStudentsAllFailed() { return studentTargets.size() > 0 ? false : true; }
+    public int getStudentsSize() { return studentTargets.size(); } //for stats
 
     /**
      * Beinhaltet Referenzen auf Kacheln (hier alle vom Typ {@link Floor}), auf welchen ein Ziel
@@ -195,6 +197,7 @@ public class GameContent implements Drawable {
             Exam exam = new Exam(x, y, getGraphicsStream(levelName, "exam"));
             targetTiles[exam.getY()][exam.getX()] = exam;
             detonationTimes.put(exam, getElapsedTime()+exam.getDetonationTime());
+            Stats.incrementExamPlaced();
         }
     }
 
@@ -363,6 +366,7 @@ public class GameContent implements Drawable {
 
                 if(player == null) {
                     isPlayerDead = true;
+                    gamesound.playOhNoSound();
                 }
             }
         }
@@ -520,6 +524,7 @@ public class GameContent implements Drawable {
                     dynamicTiles.add(st);
                     i+=1;
                 }
+                Stats.setStudentsTotal(studentTargets.size());
             }
         }
     }
@@ -574,11 +579,9 @@ public class GameContent implements Drawable {
             TileGraphics targetTargetTile = targetTiles[newY][newX];
             
             if(targetTargetTile != null && !targetTargetTile.isPassable()) {
-                Log.d("HSKL", "TargetTiles: " + targetTargetTile);
                 continue;
             }
             if(targetTargetTile == null && (targetTile == null || !targetTile.isPassable())) {
-                Log.d("HSKL", "Tiles: " + targetTile);
                 continue;
             }
             destinationTile = targetTile;
