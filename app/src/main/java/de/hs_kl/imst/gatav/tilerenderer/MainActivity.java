@@ -13,16 +13,16 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
-    private MediaPlayer hintergrund;
+    private MediaPlayer startscreensound;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         // Sound
-        hintergrund = MediaPlayer.create(MainActivity.this, R.raw.background);
-        hintergrund.setLooping(true);
-        hintergrund.start();
+        startscreensound = MediaPlayer.create(MainActivity.this, R.raw.startscreensound);
+        startscreensound.setLooping(true);
+        startscreensound.start();
 
         AssetManager am = getResources().getAssets();
         ArrayList<String> levelList = new ArrayList<String>();  // alle Level-Namen ohne .txt
@@ -53,5 +53,12 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(intent);
 			}
 		});
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        startscreensound.release();
+        finish();
     }
 }
