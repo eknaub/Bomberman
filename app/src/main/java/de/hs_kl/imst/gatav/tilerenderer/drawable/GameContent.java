@@ -649,8 +649,10 @@ public class GameContent implements Drawable {
         switch(c) {
             case 'w':
             case 'W': return new Wall(xIndex, yIndex, getGraphicsStream(levelName, "wall"));
+            case 'l':
+            case 'L': return new Wall(xIndex, yIndex, getGraphicsStream(levelName, "wall1"));
             case 'f':
-            case 'F': return new Floor(xIndex, yIndex, null);
+            case 'F': return new Floor(xIndex, yIndex, getGraphicsStream(levelName, "floor"));
             case 'p':
             case 'P': return new Player(xIndex, yIndex, getGraphicsStream(levelName, "professor"));
             case 'c':
