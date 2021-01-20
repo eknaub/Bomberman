@@ -56,9 +56,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onStop() {
-        super.onStop();
-        startscreensound.release();
-        finish();
+    protected void onResume() {
+        super.onResume();
+        startscreensound.start();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        startscreensound.pause();
     }
 }

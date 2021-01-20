@@ -45,4 +45,9 @@ public class EndScreen extends AppCompatActivity {
             }
         });
     }
+
+    @Override
+    public void onBackPressed() {
+        //Nichts tun, weil das der Endscreen ist.
+    }
 }

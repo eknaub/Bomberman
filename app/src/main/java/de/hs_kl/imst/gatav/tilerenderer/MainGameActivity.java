@@ -2,8 +2,12 @@ package de.hs_kl.imst.gatav.tilerenderer;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Intent;
 import android.media.MediaPlayer;
 import android.os.Bundle;
+import android.util.Log;
+
+import de.hs_kl.imst.gatav.tilerenderer.screens.EndScreen;
 
 public class MainGameActivity extends AppCompatActivity {
 
@@ -20,10 +24,16 @@ public class MainGameActivity extends AppCompatActivity {
         gameView = new GameView(this, level);
         setContentView(gameView);
     }
+
     @Override
-    protected void onStop() {
-        super.onStop();
-        hintergrund.release();
-        finish();
+    protected void onResume() {
+        super.onResume();
+        hintergrund.start();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        hintergrund.pause();
     }
 }
