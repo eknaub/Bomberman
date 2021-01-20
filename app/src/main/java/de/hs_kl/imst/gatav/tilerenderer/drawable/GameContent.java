@@ -213,6 +213,8 @@ public class GameContent implements Drawable {
         }
         if(toRemove.size() > 0) {
             for(Exam exam : toRemove) {
+                //sound, eine klausur = eine explosion
+                gamesound.playExplosionSound();
                 detonationTimes.remove(exam);
                 targetTiles[exam.getY()][exam.getX()] = null;
                 int explosionRadius = player.getExplosionRadius();
@@ -284,8 +286,6 @@ public class GameContent implements Drawable {
                 player = null;
                 gamesound.playOhNoSound();
             }
-            //sound
-            gamesound.playExplosionSound();
 
             ArrayList<Student> toRemove = new ArrayList<>();
             for (Student st : studentTargets) {
