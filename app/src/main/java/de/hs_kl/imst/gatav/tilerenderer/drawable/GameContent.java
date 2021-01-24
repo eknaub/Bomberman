@@ -290,10 +290,8 @@ public class GameContent implements Drawable {
             ArrayList<Student> toRemove = new ArrayList<>();
             for (Student st : studentTargets) {
                 if (st != null && samePosition(exp, st)) {
-                    //new grade dickt wenn der student tot ist
-                    Grade grade = new Grade(x, y, getGraphicsStream(levelName, "grade"));
-                    targetTiles[y][x] = grade;
-                    gradeTimes.put(grade, getElapsedTime() + grade.getRemoveTime());
+                    targetTiles[y][x]=null;
+
                     toRemove.add(st);
                 }
             }
@@ -302,6 +300,10 @@ public class GameContent implements Drawable {
                     studentTargets.remove(st);
                     dynamicTiles.remove(st);
                     gamesound.playMistSound();
+                    //new grade dickt wenn der student tot ist
+                    Grade grade = new Grade(x, y, getGraphicsStream(levelName, "grade"));
+                    targetTiles[st.y][st.x] = grade;
+                    gradeTimes.put(grade, getElapsedTime() + grade.getRemoveTime());
                 }
             }
         }
