@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.util.Log;
 import android.util.Pair;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
@@ -192,6 +193,7 @@ public class GameView extends SurfaceView implements SurfaceHolder.Callback, Run
                     gameMode = 2;
                 if(gameContent.isPlayerDead())
                     gameMode = 3;
+                runningRenderLoop = false; //end the loop so the endscreen can start in landscape
             }
 
             Canvas canvas = surfaceHolder.lockCanvas();

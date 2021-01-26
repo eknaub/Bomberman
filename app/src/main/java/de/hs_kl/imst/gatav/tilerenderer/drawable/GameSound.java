@@ -13,16 +13,12 @@ public class GameSound {
     private static int mist;
     private static int ohno;
 
-
-
     public GameSound(Context context){
         soundPool = new SoundPool(2,AudioManager.STREAM_MUSIC,0);
         explosion = soundPool.load(context, R.raw.explosion,1);
         mist = soundPool.load(context, R.raw.berndsagtmist,1);
         ohno = soundPool.load(context, R.raw.ohno,1);
         upgrade = soundPool.load(context, R.raw.upgradsound,1);
-
-
     }
 
     public void playExplosionSound(){

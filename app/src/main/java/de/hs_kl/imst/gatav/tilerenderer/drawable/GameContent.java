@@ -40,11 +40,10 @@ public class GameContent implements Drawable {
      * Beinhaltet alle Tiles, die das Spielfeld als solches darstellen. Diese werden als erstes
      * gezeichnet und bilden somit die unterste Ebene.
      */
-    private TileGraphics[][] tiles;         // [zeilen][spalten]
+    private TileGraphics[][] tiles; //[zeilen][spalten]
 
     /**
-     * Beinhaltet Referenzen auf alle dynamischen Kacheln, deren {@link Drawable#update(float)} Methode
-     * aufgerufen werden muss. Damit lassen sich Kachel-Animationen durchführen.
+     * Dynamische Kacheln, Spieler und Studenten
      */
     private ArrayList<TileGraphics> dynamicTiles = new ArrayList<>();
 
@@ -60,29 +59,19 @@ public class GameContent implements Drawable {
     private TileGraphics[][] targetTilesBeforeExplosion;
 
     /**
-     * Beinhaltet Referenzen auf alle Ziele (studenten)
+     * Alle Studenten die existieren
      */
     private ArrayList<Student> studentTargets = new ArrayList<>();
     public boolean isStudentsAllFailed() { return studentTargets.size() > 0 ? false : true; }
     public int getStudentsSize() { return studentTargets.size(); } //for stats
 
-    /**
-     * Beinhaltet Referenzen auf Kacheln (hier alle vom Typ {@link Floor}), auf welchen ein Ziel
-     * erscheinen kann.
-     */
-    private ArrayList<TileGraphics> possibleTargets = new ArrayList<>();
-
     private Map<Exam, Double> detonationTimes = new HashMap<>();
     private Map<Explosion, Double> explosionTimes = new HashMap<>();
     private Map<Grade, Double> gradeTimes = new HashMap<>();
 
+    private Player player = null;
     private boolean isPlayerDead = false;
     public boolean isPlayerDead() { return isPlayerDead; }
-
-    /**
-     * Beinhaltet Referenz auf Spieler, der bewegt wird.
-     */
-    private Player player = null;
 
     /**
      * Wird in {@link GameContent#movePlayer(Direction)} verwendet, um dem Game Thread
@@ -99,9 +88,6 @@ public class GameContent implements Drawable {
     synchronized public void resetPlantBomb() { plantBomb = false; }
     synchronized public void activatePlantBomb() { plantBomb = true; }
 
-    /**
-     * Zufallszahlengenerator für zufällige Dinge (Upgrade spawn aus Kiste oder nicht)
-     */
     private Random random = new Random();
 
     private Context context;
@@ -111,14 +97,7 @@ public class GameContent implements Drawable {
      */
     private AssetManager assetManager;
 
-    /**
-     * Name des Levels
-     */
     private String levelName;
-
-    /**
-     * Gamesound
-     */
     private GameSound gamesound;
 
     /**
@@ -129,10 +108,8 @@ public class GameContent implements Drawable {
         this.context = context;
         this.assetManager = context.getAssets();
         this.levelName = levelName;
-        //sound
         gamesound = new GameSound(context);
-        // Level laden mit Wall (W), Floor (F) und Player (P)
-        // Target wird im geladenen Level zum Schluss zusätzlich gesetzt
+
         try {
             loadLevel(assetManager.open(String.format("levels/%s.txt", levelName)));
         } catch (IOException e) {
@@ -213,8 +190,8 @@ public class GameContent implements Drawable {
         }
         if(toRemove.size() > 0) {
             for(Exam exam : toRemove) {
-                //sound, eine klausur = eine explosion
                 gamesound.playExplosionSound();
+
                 detonationTimes.remove(exam);
                 targetTiles[exam.getY()][exam.getX()] = null;
                 int explosionRadius = player.getExplosionRadius();
@@ -298,7 +275,7 @@ public class GameContent implements Drawable {
                     studentTargets.remove(st);
                     dynamicTiles.remove(st);
                     gamesound.playMistSound();
-                    //new grade dickt wenn der student tot ist
+
                     Grade grade = new Grade(x, y, getGraphicsStream(levelName, "grade"));
                     targetTiles[y][x] = grade;
                     gradeTimes.put(grade, getElapsedTime() + grade.getRemoveTime());
@@ -500,17 +477,14 @@ public class GameContent implements Drawable {
                 TileGraphics tg = getTileByCharacter(line.charAt(xIndex), xIndex, yIndex);
                 // Floor Tiles sind gleichzeitig Kacheln, auf denen Ziele erscheinen können
                 if(tg instanceof Floor) {
-                    possibleTargets.add(tg);
                     tiles[yIndex][xIndex] = tg;
                 } else if(tg instanceof Player) {   // auch auf der Player Kachel können Ziele erscheinen, zusätzlich ist sie eine Floor Kachel
                     tiles[yIndex][xIndex] = getTileByCharacter('f', xIndex, yIndex);
-                    possibleTargets.add(tiles[yIndex][xIndex]);
                     if (player != null)
                         throw new IOException("Invalid level file, contains more than one player!");
                     player = (Player) tg;
                 }
                 else if(tg instanceof Student || tg instanceof Chest) {
-                    possibleTargets.add(tg);
                     tiles[yIndex][xIndex] = getTileByCharacter('f', xIndex, yIndex);
                     targetTiles[yIndex][xIndex] = tg;
                 }
