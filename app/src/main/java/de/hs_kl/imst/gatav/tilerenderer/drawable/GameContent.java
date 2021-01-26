@@ -290,8 +290,6 @@ public class GameContent implements Drawable {
             ArrayList<Student> toRemove = new ArrayList<>();
             for (Student st : studentTargets) {
                 if (st != null && samePosition(exp, st)) {
-                    targetTiles[y][x]=null;
-
                     toRemove.add(st);
                 }
             }
@@ -302,7 +300,7 @@ public class GameContent implements Drawable {
                     gamesound.playMistSound();
                     //new grade dickt wenn der student tot ist
                     Grade grade = new Grade(x, y, getGraphicsStream(levelName, "grade"));
-                    targetTiles[st.y][st.x] = grade;
+                    targetTiles[y][x] = grade;
                     gradeTimes.put(grade, getElapsedTime() + grade.getRemoveTime());
                 }
             }
@@ -350,7 +348,6 @@ public class GameContent implements Drawable {
             }
         }
         if(toRemove.size() > 0) {
-
             for(Explosion exp : toRemove) {
                 int x = exp.getX();
                 int y = exp.getY();
@@ -453,10 +450,10 @@ public class GameContent implements Drawable {
         // Player Move fertig ausgeführt => Sperre für neues Player Event freischalten
         if(player != null && !player.isMoving())
             resetPlayerDirection();
-        // Animation des dynamischen Ziels abgeschlossen
+
         for(Student st :studentTargets ) {
             if (st != null && !st.isMoving()) {
-                 MoveDynamicTarget(st);
+                 moveStudent(st);
             }
         }
     }
@@ -520,15 +517,21 @@ public class GameContent implements Drawable {
                 else {
                     tiles[yIndex][xIndex] = tg;
                 }
-                if(!(tg instanceof Player)&&!(isTileWall(yIndex,xIndex))&&i<l) {
-                    Student st = new Student(xIndex, yIndex, getGraphicsStream(levelName, "student"));
-                    studentTargets.add(st);
-                    dynamicTiles.add(st);
-                    i+=1;
-                }
-                Stats.setStudentsTotal(studentTargets.size());
             }
         }
+        //Studenten zufällig auf Map platzieren
+        while(i < l) {
+            int y = random.nextInt(targetTiles.length);
+            int x = random.nextInt(targetTiles[y].length);
+            if (tiles[y][x] instanceof Floor) {
+                Student st = new Student(x, y, getGraphicsStream(levelName, "student"));
+                studentTargets.add(st);
+                dynamicTiles.add(st);
+                i+=1;
+            }
+            else continue;
+        }
+        Stats.setStudentsTotal(studentTargets.size());
     }
 
     /**
@@ -541,7 +544,7 @@ public class GameContent implements Drawable {
      */
 
     @Nullable
-    public void MoveDynamicTarget(Student st) {
+    public void moveStudent(Student st) {
         // Destination bestimmen, falls möglich, ansonsten Abbruch
         // 0 left, 1 right, 2 up, 3 down
         ArrayList<Integer> dl = new ArrayList<Integer>();
