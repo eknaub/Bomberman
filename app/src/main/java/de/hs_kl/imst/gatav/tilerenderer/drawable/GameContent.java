@@ -484,7 +484,7 @@ public class GameContent implements Drawable {
                         throw new IOException("Invalid level file, contains more than one player!");
                     player = (Player) tg;
                 }
-                else if(tg instanceof Student || tg instanceof Chest) {
+                else if(tg instanceof Chest) {
                     tiles[yIndex][xIndex] = getTileByCharacter('f', xIndex, yIndex);
                     targetTiles[yIndex][xIndex] = tg;
                 }
@@ -494,16 +494,15 @@ public class GameContent implements Drawable {
             }
         }
         //Studenten zufällig auf Map platzieren
-        while(i < l) {
+        while (i<l){
             int y = random.nextInt(targetTiles.length);
             int x = random.nextInt(targetTiles[y].length);
-            if (tiles[y][x] instanceof Floor) {
+            if (tiles[y][x] instanceof Floor &&!nebenPosition(player,tiles[y][x] )&& !samePosition(player,tiles[y][x])) {
                 Student st = new Student(x, y, getGraphicsStream(levelName, "student"));
                 studentTargets.add(st);
                 dynamicTiles.add(st);
-                i+=1;
+                i++;
             }
-            else continue;
         }
         Stats.setStudentsTotal(studentTargets.size());
     }
@@ -583,6 +582,20 @@ public class GameContent implements Drawable {
     private boolean samePosition(TileGraphics a, TileGraphics b) {
         if(a.getX() == b.getX() && a.getY() == b.getY())
             return true;
+        return false;
+    }
+    private boolean nebenPosition(TileGraphics a, TileGraphics b) {
+        if(a.getX()+1 == b.getX() )
+            return true;
+        if( a.getY()+1 == b.getY() )
+            return true;
+
+        if(a.getX()-1 == b.getX() )
+            return true;
+
+        if( a.getY()-1 == b.getY())
+            return true;
+
         return false;
     }
 
